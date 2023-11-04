@@ -379,4 +379,6 @@ public interface SyncRequestClient {
      * @return
      */
     Ticker getTicker(String symbol);
+
+    void setInitialMarginRate(String symbol, BigDecimal initialMarginRate);
 }

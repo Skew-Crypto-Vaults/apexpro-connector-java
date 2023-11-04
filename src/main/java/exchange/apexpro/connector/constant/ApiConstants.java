@@ -29,6 +29,8 @@ public class ApiConstants {
     public static final String ASSET_USDC = "USDC";
     public static final String COLLATERAL_ASSET = ASSET_USDC;
 
+    public static final String DEFAULT_ORDER_ASSET = "BTC-USDC";
+
 
     // ------------ Ethereum Transactions ------------
     public static final Uint256 MAX_SOLIDITY_UINT = new Uint256(new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935"));

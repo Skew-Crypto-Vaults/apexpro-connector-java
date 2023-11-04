@@ -53,7 +53,7 @@ abstract class RestApiInvoker {
             log.debug("Request URL " + request.request.url());
             Response response = client.newCall(request.request).execute();
             // System.out.println(response.body().string());
-            if (response != null && response.body() != null) {
+            if (response.isSuccessful() && response != null && response.body() != null) {
                 str = response.body().string();
                 response.close();
             } else {
@@ -63,7 +63,7 @@ abstract class RestApiInvoker {
             log.debug("Request: "+request.request +"  Response =====> " + str);
             JsonWrapper jsonWrapper = JsonWrapper.parseFromString(str);
             checkResponse(jsonWrapper);
-            return request.jsonParser.parseJson(jsonWrapper);
+            return request.jsonParser!=null?request.jsonParser.parseJson(jsonWrapper):null;
         } catch (ApexProApiException e) {
             throw e;
         } catch (Exception e) {

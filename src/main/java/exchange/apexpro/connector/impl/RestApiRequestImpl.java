@@ -4,6 +4,7 @@ package exchange.apexpro.connector.impl;
 import exchange.apexpro.connector.ApexProCredentials;
 import exchange.apexpro.connector.RequestOptions;
 import exchange.apexpro.connector.SyncRequestClient;
+import exchange.apexpro.connector.constant.ApiConstants;
 import exchange.apexpro.connector.exception.ApexProApiException;
 import exchange.apexpro.connector.impl.utils.ApiSignHelper;
 import exchange.apexpro.connector.impl.utils.JsonWrapper;
@@ -22,6 +23,7 @@ import exchange.apexpro.connector.model.user.ApiCredential;
 import exchange.apexpro.connector.model.user.User;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Request;
+import org.apache.commons.lang3.StringUtils;
 import org.web3j.utils.Strings;
 
 import java.io.IOException;
@@ -1122,6 +1124,16 @@ class RestApiRequestImpl {
 
             return ticker;
         });
+        return request;
+    }
+
+    public RestApiRequest<Void> setInitialMarginRate(String symbol, BigDecimal initialMarginRate) {
+        RestApiRequest<Void> request = new RestApiRequest<>();
+
+        RequestParamsBuilder builder = RequestParamsBuilder.build().putToPost("symbol", StringUtils.isNotEmpty(symbol) ? symbol :
+                ApiConstants.DEFAULT_ORDER_ASSET).putToPost("initialMarginRate", initialMarginRate.toPlainString());
+
+        request.request = createRequest(serverUrl, "/v1/set-initial-margin-rate", builder);
         return request;
     }
 }

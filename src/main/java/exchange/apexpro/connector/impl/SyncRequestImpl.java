@@ -162,4 +162,9 @@ public class SyncRequestImpl implements SyncRequestClient {
         return RestApiInvoker.callSync(requestImpl.getTicker( symbol));
     }
 
+    @Override
+    public void setInitialMarginRate(String symbol, BigDecimal initialMarginRate) {
+        RestApiInvoker.callSync(requestImpl.setInitialMarginRate(symbol,initialMarginRate));
+    }
+
 }
