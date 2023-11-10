@@ -345,11 +345,9 @@ class RestApiRequestImpl {
         RequestParamsBuilder builder = RequestParamsBuilder.build()
                 .putToUrl("symbol", symbol)
                 .putToUrl("page", String.valueOf(page))
-                .putToUrl("limit", String.valueOf(limit));
-                if (beginTimeInclusive > 0)
-                    builder.putToUrl("beginTimeInclusive", String.valueOf(beginTimeInclusive));
-                if (endTimeExclusive > 0)
-                    builder.putToUrl("endTimeExclusive", String.valueOf(endTimeExclusive));
+                .putToUrl("limit", String.valueOf(limit))
+                .putToUrl("beginTimeInclusive", beginTimeInclusive!=null?String.valueOf(beginTimeInclusive):"")
+                .putToUrl("endTimeExclusive", endTimeExclusive!=null?String.valueOf(endTimeExclusive):"");
 
         request.request = createRequest(serverUrl, "/v1/fills", builder);
         request.jsonParser = (jsonWrapper -> {
