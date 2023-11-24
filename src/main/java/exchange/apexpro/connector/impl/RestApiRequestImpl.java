@@ -3,8 +3,10 @@ package exchange.apexpro.connector.impl;
 
 import exchange.apexpro.connector.ApexProCredentials;
 import exchange.apexpro.connector.RequestOptions;
-import exchange.apexpro.connector.SyncRequestClient;
+import exchange.apexpro.connector.config.ApexConfig;
+import exchange.apexpro.connector.constant.ApexConstant;
 import exchange.apexpro.connector.constant.ApiConstants;
+import exchange.apexpro.connector.enums.ApexSupportedMarket;
 import exchange.apexpro.connector.exception.ApexProApiException;
 import exchange.apexpro.connector.impl.utils.ApiSignHelper;
 import exchange.apexpro.connector.impl.utils.JsonWrapper;
@@ -40,16 +42,19 @@ class RestApiRequestImpl {
     private ApiCredential apiCredential;
     private L2KeyPair l2KeyPair;
     private String serverUrl;
+    private ApexConfig config;
 
     RestApiRequestImpl(ApexProCredentials apexProCredentials, RequestOptions options) {
+        config = new ApexConfig();
+
         if (apexProCredentials != null) {
             this.apiCredential = apexProCredentials.apiCredential;
             this.l2KeyPair = apexProCredentials.l2KeyPair;
         }
-        if (options.getUrl() != null && !options.getUrl().equals(""))
+        if (options.getUrl() != null && !options.getUrl().equals("")) {
             this.serverUrl = options.getUrl();
+        }
     }
-
 
 
     private Request createRequest(String url, String address, RequestParamsBuilder builder) {
@@ -63,8 +68,7 @@ class RestApiRequestImpl {
         }
 
         //Set default headers
-        requestBuilder.addHeader("Content-Type", "application/x-www-form-urlencoded")
-                .addHeader("platform", "api");
+        requestBuilder.addHeader("Content-Type", "application/x-www-form-urlencoded").addHeader("platform", "api");
 
         //sign request
         if (apiCredential != null) {
@@ -72,9 +76,12 @@ class RestApiRequestImpl {
             //Long timestamp = 1674920517000l;
             String signature;
             if (builder.hasPostData()) {
-                signature = ApiSignHelper.sign(this.apiCredential.getSecret(), URL_SUFFIX + address, "POST", timestamp, builder.getPostData());
-            } else {
-                signature = ApiSignHelper.sign(this.apiCredential.getSecret(), URL_SUFFIX + address, "GET", timestamp, builder.getGetData());
+                signature =
+                        ApiSignHelper.sign(this.apiCredential.getSecret(), URL_SUFFIX + address, "POST", timestamp, builder.getPostData());
+            }
+            else {
+                signature =
+                        ApiSignHelper.sign(this.apiCredential.getSecret(), URL_SUFFIX + address, "GET", timestamp, builder.getGetData());
             }
 
             builder.putToHeader("APEX-API-KEY", this.apiCredential.getApiKey());
@@ -94,7 +101,7 @@ class RestApiRequestImpl {
         RestApiRequest<String> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build();
 
-        request.request = createRequest(serverUrl, "/v1/symbols", builder);
+        request.request = createRequest(serverUrl, "/v2/symbols", builder);
 
         request.jsonParser = (jsonWrapper -> jsonWrapper.getString("data"));
         return request;
@@ -103,12 +110,10 @@ class RestApiRequestImpl {
 
     RestApiRequest<Long> generateNonce(String ethAddress, int chainId, String l2PublicKey) {
         RestApiRequest<Long> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToPost("ethAddress", ethAddress)
-                .putToPost("starkKey", l2PublicKey)
-                .putToPost("chainId", Long.valueOf(chainId));
+        RequestParamsBuilder builder = RequestParamsBuilder.build().putToPost("ethAddress", ethAddress).putToPost("starkKey", l2PublicKey)
+                                                           .putToPost("chainId", Long.valueOf(chainId));
 
-        request.request = createRequest(serverUrl, "/v1/generate-nonce", builder);
+        request.request = createRequest(serverUrl, "/v2/generate-nonce", builder);
 
         request.jsonParser = (jsonWrapper -> {
             JsonWrapper jsonObject = jsonWrapper.getJsonObject("data");
@@ -120,17 +125,14 @@ class RestApiRequestImpl {
 
     RestApiRequest<ApiCredential> onboard(String ethAddress, String onboardingSignature, String l2PublicKey, String l2KeyYCoordinate) {
         RestApiRequest<ApiCredential> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToPost("ethereumAddress", ethAddress)
-                .putToPost("starkKey", l2PublicKey)
-                .putToPost("starkKeyYCoordinate", l2KeyYCoordinate)
-                .putToPost("walletName", "java-sdk")
-                .putToPost("platform", "api")
+        RequestParamsBuilder builder =
+                RequestParamsBuilder.build().putToPost("ethereumAddress", ethAddress).putToPost("starkKey", l2PublicKey)
+                                    .putToPost("starkKeyYCoordinate", l2KeyYCoordinate).putToPost("walletName", "java-sdk")
+                                    .putToPost("platform", "api")
 
-                .putToHeader("apex-ethereum-address", ethAddress)
-                .putToHeader("apex-signature", onboardingSignature);
+                                    .putToHeader("apex-ethereum-address", ethAddress).putToHeader("apex-signature", onboardingSignature);
 
-        request.request = createRequest(serverUrl, "/v1/onboarding", builder);
+        request.request = createRequest(serverUrl, "/v2/onboarding", builder);
 
         request.jsonParser = (jsonWrapper -> {
             JsonWrapper jsonData = jsonWrapper.getJsonObject("data");
@@ -155,7 +157,7 @@ class RestApiRequestImpl {
     public RestApiRequest<User> getUser() {
         RestApiRequest<User> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build();
-        request.request = createRequest(serverUrl, "/v1/user", builder);
+        request.request = createRequest(serverUrl, "/v2/user", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             User result = new User();
@@ -173,20 +175,20 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<User> modifyUser(String userData, String email, String username, String isSharingUsername, String isSharingAddress, String country, String emailNotifyGeneralEnable, String emailNotifyTradingEnable, String emailNotifyAccountEnable, String popupNotifyTradingEnable) {
+    public RestApiRequest<User> modifyUser(String userData, String email, String username, String isSharingUsername,
+                                           String isSharingAddress, String country, String emailNotifyGeneralEnable,
+                                           String emailNotifyTradingEnable, String emailNotifyAccountEnable,
+                                           String popupNotifyTradingEnable)
+    {
         RestApiRequest<User> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToPost("userData", userData)
-                .putToPost("email", email)
-                .putToPost("username", username)
-                .putToPost("isSharingUsername", isSharingUsername)
-                .putToPost("isSharingAddress", isSharingAddress)
-                .putToPost("country", country)
-                .putToPost("emailNotifyGeneralEnable", emailNotifyGeneralEnable)
-                .putToPost("emailNotifyTradingEnable", emailNotifyTradingEnable)
-                .putToPost("emailNotifyAccountEnable", emailNotifyAccountEnable)
-                .putToPost("popupNotifyTradingEnable", popupNotifyTradingEnable);
-        request.request = createRequest(serverUrl, "/v1/modify-user", builder);
+        RequestParamsBuilder builder =
+                RequestParamsBuilder.build().putToPost("userData", userData).putToPost("email", email).putToPost("username", username)
+                                    .putToPost("isSharingUsername", isSharingUsername).putToPost("isSharingAddress", isSharingAddress)
+                                    .putToPost("country", country).putToPost("emailNotifyGeneralEnable", emailNotifyGeneralEnable)
+                                    .putToPost("emailNotifyTradingEnable", emailNotifyTradingEnable)
+                                    .putToPost("emailNotifyAccountEnable", emailNotifyAccountEnable)
+                                    .putToPost("popupNotifyTradingEnable", popupNotifyTradingEnable);
+        request.request = createRequest(serverUrl, "/v2/modify-user", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             User result = new User();
@@ -207,7 +209,7 @@ class RestApiRequestImpl {
     public RestApiRequest<Account> getAccount() {
         RestApiRequest<Account> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build();
-        request.request = createRequest(serverUrl, "/v1/account", builder);
+        request.request = createRequest(serverUrl, "/v2/account", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             Account account = new Account();
@@ -256,7 +258,7 @@ class RestApiRequestImpl {
     public RestApiRequest<Balance> getBalance() {
         RestApiRequest<Balance> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build();
-        request.request = createRequest(serverUrl, "/v1/account-balance", builder);
+        request.request = createRequest(serverUrl, "/v2/account-balance", builder);
         request.jsonParser = (jsonWrapper -> {
             JsonWrapper data = jsonWrapper.getJsonObject("data");
             Balance balance = new Balance();
@@ -272,16 +274,14 @@ class RestApiRequestImpl {
     }
 
 
-    public RestApiRequest<HistoryPnl> getHistoryPnl(Long beginTimeInclusive, Long endTimeExclusive, String symbol, Long page, Integer limit) {
+    public RestApiRequest<HistoryPnl> getHistoryPnl(Long beginTimeInclusive, Long endTimeExclusive, String symbol, Long page, Integer limit)
+    {
         RestApiRequest<HistoryPnl> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToUrl("beginTimeInclusive", String.valueOf(beginTimeInclusive))
-                .putToUrl("endTimeExclusive", String.valueOf(endTimeExclusive))
-                .putToUrl("type", "CLOSE_POSITION")
-                .putToUrl("symbol", symbol)
-                .putToUrl("page", String.valueOf(page))
-                .putToUrl("limit", String.valueOf(limit));
-        request.request = createRequest(serverUrl, "/v1/historical-pnl", builder);
+        RequestParamsBuilder builder = RequestParamsBuilder.build().putToUrl("beginTimeInclusive", String.valueOf(beginTimeInclusive))
+                                                           .putToUrl("endTimeExclusive", String.valueOf(endTimeExclusive))
+                                                           .putToUrl("type", "CLOSE_POSITION").putToUrl("symbol", symbol)
+                                                           .putToUrl("page", String.valueOf(page)).putToUrl("limit", String.valueOf(limit));
+        request.request = createRequest(serverUrl, "/v2/historical-pnl", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             HistoryPnl result = new HistoryPnl();
@@ -308,7 +308,7 @@ class RestApiRequestImpl {
     public RestApiRequest<YesterdayPnl> getYesterdayPnl() {
         RestApiRequest<YesterdayPnl> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build();
-        request.request = createRequest(serverUrl, "/v1/yesterday-pnl", builder);
+        request.request = createRequest(serverUrl, "/v2/yesterday-pnl", builder);
         request.jsonParser = (jsonWrapper -> {
             YesterdayPnl result = new YesterdayPnl();
             result.setPnl(new BigDecimal(jsonWrapper.getString("data")));
@@ -319,10 +319,9 @@ class RestApiRequestImpl {
 
     public RestApiRequest<HistoryValue> getHistoryValue(Long startTime, Long endTime) {
         RestApiRequest<HistoryValue> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToUrl("endTime", String.valueOf(endTime))
-                .putToUrl("startTime", String.valueOf(startTime));
-        request.request = createRequest(serverUrl, "/v1/history-value", builder);
+        RequestParamsBuilder builder =
+                RequestParamsBuilder.build().putToUrl("endTime", String.valueOf(endTime)).putToUrl("startTime", String.valueOf(startTime));
+        request.request = createRequest(serverUrl, "/v2/history-value", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             HistoryValue result = new HistoryValue();
@@ -342,14 +341,12 @@ class RestApiRequestImpl {
 
     public RestApiRequest<OrderFills> getFills(String symbol, Long beginTimeInclusive, Long endTimeExclusive, Integer page, Integer limit) {
         RestApiRequest<OrderFills> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToUrl("symbol", symbol)
-                .putToUrl("page", String.valueOf(page))
-                .putToUrl("limit", String.valueOf(limit))
-                .putToUrl("beginTimeInclusive", beginTimeInclusive!=null?String.valueOf(beginTimeInclusive):"")
-                .putToUrl("endTimeExclusive", endTimeExclusive!=null?String.valueOf(endTimeExclusive):"");
+        RequestParamsBuilder builder = RequestParamsBuilder.build().putToUrl("symbol", symbol).putToUrl("page", String.valueOf(page))
+                                                           .putToUrl("limit", String.valueOf(limit)).putToUrl("beginTimeInclusive",
+                        beginTimeInclusive != null ? String.valueOf(beginTimeInclusive) : "").putToUrl("endTimeExclusive",
+                        endTimeExclusive != null ? String.valueOf(endTimeExclusive) : "");
 
-        request.request = createRequest(serverUrl, "/v1/fills", builder);
+        request.request = createRequest(serverUrl, "/v2/fills", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             OrderFills result = new OrderFills();
@@ -388,56 +385,57 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<Order> createOrderWithTPSL(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId, boolean reduceOnly,OrderParams takeProfitOrder, OrderParams stopLossOrder) {
+    public RestApiRequest<Order> createOrderWithTPSL(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price,
+                                                     BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId,
+                                                     boolean reduceOnly, OrderParams takeProfitOrder, OrderParams stopLossOrder)
+    {
 
         //Sign the order with L2KeyPair
         String signature;
-        BigDecimal limitFee = maxFeeRate.multiply(size).multiply(price).setScale(Math.max(0, maxFeeRate.stripTrailingZeros().scale()), RoundingMode.UP);
+        BigDecimal limitFee =
+                maxFeeRate.multiply(size).multiply(price).setScale(Math.max(0, maxFeeRate.stripTrailingZeros().scale()), RoundingMode.UP);
         long expireTime = System.currentTimeMillis() + 18 * 24 * 60 * 60 * 1000;
         try {
-            signature = L2OrderSigner.signOrder(l2KeyPair, apiCredential.getAccountId(), symbol, size, price, limitFee, expireTime, clientOrderId,side);
-        }catch (IOException e) {
-            throw new ApexProApiException(EXEC_ERROR,"An error occurred when signing an order with l2KeyPair");
+            signature = L2OrderSigner.signOrder(ApexSupportedMarket.valueOf(config.getProperty(ApexConstant.ENABLED_MARKET)), l2KeyPair,
+                    apiCredential.getAccountId(), symbol, size, price, limitFee, expireTime, clientOrderId, side);
+        }
+        catch (IOException e) {
+            throw new ApexProApiException(EXEC_ERROR, "An error occurred when signing an order with l2KeyPair");
         }
 
         RestApiRequest<Order> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToPost("symbol", symbol)
-                .putToPost("side", side.name())
-                .putToPost("type", type.name())
-                .putToPost("size", size.toPlainString())
-                .putToPost("price", price.toPlainString())
-                .putToPost("limitFee", limitFee.toPlainString())
-                .putToPost("expiration", String.valueOf(expireTime))
-                .putToPost("timeInForce", timeInForce.name())
-                .putToPost("clientId", clientOrderId)
-                .putToPost("signature", signature)
-                .putToPost("reduceOnly", String.valueOf(reduceOnly))
-                ;
+        RequestParamsBuilder builder =
+                RequestParamsBuilder.build().putToPost("symbol", symbol).putToPost("side", side.name()).putToPost("type", type.name())
+                                    .putToPost("size", size.toPlainString()).putToPost("price", price.toPlainString())
+                                    .putToPost("limitFee", limitFee.toPlainString()).putToPost("expiration", String.valueOf(expireTime))
+                                    .putToPost("timeInForce", timeInForce.name()).putToPost("clientId", clientOrderId)
+                                    .putToPost("signature", signature).putToPost("reduceOnly", String.valueOf(reduceOnly));
 
         // with taker profit
         if (takeProfitOrder != null) {
             //Sign the order with L2KeyPair
-            if (Strings.isEmpty(takeProfitOrder.getClientOrderId()))
-                takeProfitOrder.setClientOrderId("tp"+clientOrderId);
+            if (Strings.isEmpty(takeProfitOrder.getClientOrderId())) {
+                takeProfitOrder.setClientOrderId("tp" + clientOrderId);
+            }
 
-            BigDecimal tpLimitFee = maxFeeRate.multiply(takeProfitOrder.getSize()).multiply(takeProfitOrder.getPrice()).setScale(Math.max(0, maxFeeRate.stripTrailingZeros().scale()), RoundingMode.UP);
+            BigDecimal tpLimitFee = maxFeeRate.multiply(takeProfitOrder.getSize()).multiply(takeProfitOrder.getPrice())
+                                              .setScale(Math.max(0, maxFeeRate.stripTrailingZeros().scale()), RoundingMode.UP);
             String tpSignature;
             try {
-                tpSignature = L2OrderSigner.signOrder(l2KeyPair, apiCredential.getAccountId(), symbol, takeProfitOrder.getSize(), takeProfitOrder.getPrice(), tpLimitFee, expireTime, takeProfitOrder.getClientOrderId(),takeProfitOrder.getSide());
-            }catch (IOException e) {
-                throw new ApexProApiException(EXEC_ERROR,"An error occurred when signing tp-order with l2KeyPair");
+                tpSignature =
+                        L2OrderSigner.signOrder(ApexSupportedMarket.valueOf(config.getProperty(ApexConstant.ENABLED_MARKET)), l2KeyPair,
+                                apiCredential.getAccountId(), symbol, takeProfitOrder.getSize(), takeProfitOrder.getPrice(), tpLimitFee,
+                                expireTime, takeProfitOrder.getClientOrderId(), takeProfitOrder.getSide());
             }
-            builder.putToPost("isSetOpenTp",true).putToPost("isOpenTpslOrder",true)
-                    .putToPost("tpClientOrderId",takeProfitOrder.getClientOrderId())
-                    .putToPost("tpExpiration",String.valueOf(expireTime))
-                    .putToPost("tpLimitFee",tpLimitFee.toPlainString())
-                    .putToPost("tpPrice",takeProfitOrder.getPrice().toPlainString())
-                    .putToPost("tpSize",takeProfitOrder.getSize().toPlainString())
-                    .putToPost("tpSide",takeProfitOrder.getSide().name())
-                    .putToPost("tpTriggerPrice",takeProfitOrder.getTriggerPrice().toPlainString())
-                    .putToPost("tpTriggerPriceType",takeProfitOrder.getTriggerPriceType().name())
-                    .putToPost("tpSignature",tpSignature);
+            catch (IOException e) {
+                throw new ApexProApiException(EXEC_ERROR, "An error occurred when signing tp-order with l2KeyPair");
+            }
+            builder.putToPost("isSetOpenTp", true).putToPost("isOpenTpslOrder", true)
+                   .putToPost("tpClientOrderId", takeProfitOrder.getClientOrderId()).putToPost("tpExpiration", String.valueOf(expireTime))
+                   .putToPost("tpLimitFee", tpLimitFee.toPlainString()).putToPost("tpPrice", takeProfitOrder.getPrice().toPlainString())
+                   .putToPost("tpSize", takeProfitOrder.getSize().toPlainString()).putToPost("tpSide", takeProfitOrder.getSide().name())
+                   .putToPost("tpTriggerPrice", takeProfitOrder.getTriggerPrice().toPlainString())
+                   .putToPost("tpTriggerPriceType", takeProfitOrder.getTriggerPriceType().name()).putToPost("tpSignature", tpSignature);
         }
 
         // with stop loss
@@ -446,28 +444,29 @@ class RestApiRequestImpl {
             //Sign the order with L2KeyPair
             String slSignature;
             if (Strings.isEmpty(stopLossOrder.getClientOrderId())) {
-                stopLossOrder.setClientOrderId("sl"+clientOrderId);
+                stopLossOrder.setClientOrderId("sl" + clientOrderId);
             }
-            BigDecimal slLimitFee = maxFeeRate.multiply(stopLossOrder.getSize()).multiply(stopLossOrder.getPrice()).setScale(Math.max(0, maxFeeRate.stripTrailingZeros().scale()), RoundingMode.UP);
+            BigDecimal slLimitFee = maxFeeRate.multiply(stopLossOrder.getSize()).multiply(stopLossOrder.getPrice())
+                                              .setScale(Math.max(0, maxFeeRate.stripTrailingZeros().scale()), RoundingMode.UP);
 
             try {
-                slSignature = L2OrderSigner.signOrder(l2KeyPair, apiCredential.getAccountId(), symbol, stopLossOrder.getSize(), stopLossOrder.getPrice(), slLimitFee, expireTime, stopLossOrder.getClientOrderId(),stopLossOrder.getSide());
-            }catch (IOException e) {
-                throw new ApexProApiException(EXEC_ERROR,"An error occurred when signing sl-order with l2KeyPair");
+                slSignature =
+                        L2OrderSigner.signOrder(ApexSupportedMarket.valueOf(config.getProperty(ApexConstant.ENABLED_MARKET)), l2KeyPair,
+                                apiCredential.getAccountId(), symbol, stopLossOrder.getSize(), stopLossOrder.getPrice(), slLimitFee,
+                                expireTime, stopLossOrder.getClientOrderId(), stopLossOrder.getSide());
             }
-            builder.putToPost("isSetOpenSl",true).putToPost("isOpenTpslOrder",true)
-                    .putToPost( "slClientOrderId",stopLossOrder.getClientOrderId())
-                    .putToPost("slExpiration",expireTime)
-                    .putToPost("slLimitFee",slLimitFee)
-                    .putToPost("slPrice",stopLossOrder.getPrice())
-                    .putToPost("slSize",stopLossOrder.getSize())
-                    .putToPost("slSide",stopLossOrder.getSide())
-                    .putToPost("slTriggerPrice",stopLossOrder.getTriggerPrice())
-                    .putToPost("slTriggerPriceType",stopLossOrder.getTriggerPriceType())
-                    .putToPost("slSignature",slSignature);
+            catch (IOException e) {
+                throw new ApexProApiException(EXEC_ERROR, "An error occurred when signing sl-order with l2KeyPair");
+            }
+            builder.putToPost("isSetOpenSl", true).putToPost("isOpenTpslOrder", true)
+                   .putToPost("slClientOrderId", stopLossOrder.getClientOrderId()).putToPost("slExpiration", expireTime)
+                   .putToPost("slLimitFee", slLimitFee).putToPost("slPrice", stopLossOrder.getPrice())
+                   .putToPost("slSize", stopLossOrder.getSize()).putToPost("slSide", stopLossOrder.getSide())
+                   .putToPost("slTriggerPrice", stopLossOrder.getTriggerPrice())
+                   .putToPost("slTriggerPriceType", stopLossOrder.getTriggerPriceType()).putToPost("slSignature", slSignature);
         }
-        log.info("request.post:{}",builder.getPostData());
-        request.request = createRequest(serverUrl, "/v1/create-order", builder);
+        log.info("request.post:{}", builder.getPostData());
+        request.request = createRequest(serverUrl, "/v2/create-order", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             Order order = new Order();
@@ -479,7 +478,8 @@ class RestApiRequestImpl {
             order.setPrice(new BigDecimal(jsonWrapper.getString("price")));
             order.setLimitFee(new BigDecimal(jsonWrapper.getString("limitFee")));
             order.setFee(new BigDecimal(!jsonWrapper.getString("fee").equals("") ? jsonWrapper.getString("fee") : "0"));
-            order.setLiquidateFee(new BigDecimal(!jsonWrapper.getString("liquidateFee").equals("") ? jsonWrapper.getString("liquidateFee") : "0"));
+            order.setLiquidateFee(
+                    new BigDecimal(!jsonWrapper.getString("liquidateFee").equals("") ? jsonWrapper.getString("liquidateFee") : "0"));
             order.setTriggerPrice(new BigDecimal(jsonWrapper.getString("triggerPrice")));
             order.setSize(new BigDecimal(jsonWrapper.getString("size")));
             order.setType(jsonWrapper.getString("type"));
@@ -500,10 +500,12 @@ class RestApiRequestImpl {
             order.setCreatedTime(jsonWrapper.getLong("createdAt"));
             order.setUpdatedTime(jsonWrapper.getLong("updatedTime"));
 
-            if (takeProfitOrder != null)
+            if (takeProfitOrder != null) {
                 order.setTakeProfitOrder(takeProfitOrder);
-            if (stopLossOrder != null)
+            }
+            if (stopLossOrder != null) {
                 order.setStopLossOrder(stopLossOrder);
+            }
 
             return order;
         });
@@ -511,19 +513,27 @@ class RestApiRequestImpl {
     }
 
 
-    public RestApiRequest<Order> createConditionalOrder(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal triggerPrice,PriceType triggerPriceType, BigDecimal orderPrice,BigDecimal maxFeeRate,TimeInForce timeInForce, String clientOrderId, boolean reduceOnly) {
+    public RestApiRequest<Order> createConditionalOrder(String symbol, OrderSide side, OrderType type, BigDecimal size,
+                                                        BigDecimal triggerPrice, PriceType triggerPriceType, BigDecimal orderPrice,
+                                                        BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId,
+                                                        boolean reduceOnly)
+    {
         long expireTime = System.currentTimeMillis() + 18 * 24 * 60 * 60 * 1000;
 
-        BigDecimal limitFee = maxFeeRate.multiply(size).multiply(orderPrice).setScale(Math.max(0, maxFeeRate.stripTrailingZeros().scale()), RoundingMode.UP);
+        BigDecimal limitFee = maxFeeRate.multiply(size).multiply(orderPrice)
+                                        .setScale(Math.max(0, maxFeeRate.stripTrailingZeros().scale()), RoundingMode.UP);
 
-        Ticker ticker = RestApiInvoker.callSync(this.getTicker( symbol ));
+        Ticker ticker = RestApiInvoker.callSync(this.getTicker(symbol));
         BigDecimal currentPrice = null;
-        if (triggerPriceType == PriceType.INDEX)
+        if (triggerPriceType == PriceType.INDEX) {
             currentPrice = ticker.getIndexPrice();
-        else if (triggerPriceType == PriceType.ORACLE)
-            currentPrice =  ticker.getOraclePrice();
-        else
+        }
+        else if (triggerPriceType == PriceType.ORACLE) {
+            currentPrice = ticker.getOraclePrice();
+        }
+        else {
             currentPrice = ticker.getLastPrice();
+        }
 
 
         //Sign the order with L2KeyPair
@@ -531,44 +541,45 @@ class RestApiRequestImpl {
         String signature;
         try {
             if (type == OrderType.MARKET) {
-                BigDecimal maxMarketPriceRange = ExchangeInfo.perpetualContract(symbol).getMaxMarketPriceRange();
-                if (side == OrderSide.BUY ) {
+                BigDecimal maxMarketPriceRange =
+                        ExchangeInfo.perpetualContract(ApexSupportedMarket.valueOf(config.getProperty(ApexConstant.ENABLED_MARKET)), symbol)
+                                    .getMaxMarketPriceRange();
+                if (side == OrderSide.BUY) {
                     type = currentPrice.compareTo(triggerPrice) < 0 ? OrderType.STOP_MARKET : OrderType.TAKE_PROFIT_MARKET;
-                    orderPrice  = triggerPrice.multiply(new BigDecimal(1).add(maxMarketPriceRange));
-                } else {
-                    type = currentPrice.compareTo(triggerPrice) > 0 ? OrderType.STOP_MARKET : OrderType.TAKE_PROFIT_MARKET;
-                    orderPrice  = triggerPrice.multiply(new BigDecimal(1).subtract(maxMarketPriceRange));
+                    orderPrice = triggerPrice.multiply(new BigDecimal(1).add(maxMarketPriceRange));
                 }
-            } else if (type == OrderType.LIMIT) {
-                if (side == OrderSide.BUY ) {
+                else {
+                    type = currentPrice.compareTo(triggerPrice) > 0 ? OrderType.STOP_MARKET : OrderType.TAKE_PROFIT_MARKET;
+                    orderPrice = triggerPrice.multiply(new BigDecimal(1).subtract(maxMarketPriceRange));
+                }
+            }
+            else if (type == OrderType.LIMIT) {
+                if (side == OrderSide.BUY) {
                     type = currentPrice.compareTo(triggerPrice) < 0 ? OrderType.STOP_LIMIT : OrderType.TAKE_PROFIT_LIMIT;
-                } else {
+                }
+                else {
                     type = currentPrice.compareTo(triggerPrice) > 0 ? OrderType.STOP_LIMIT : OrderType.TAKE_PROFIT_LIMIT;
                 }
             }
 
-            signature = L2OrderSigner.signOrder(this.l2KeyPair, apiCredential.getAccountId(), symbol, size, orderPrice, limitFee, expireTime, clientOrderId,side);
-        }catch (IOException e) {
-            throw new ApexProApiException(EXEC_ERROR,"An error occurred when signing an order with l2KeyPair");
+            signature =
+                    L2OrderSigner.signOrder(ApexSupportedMarket.valueOf(config.getProperty(ApexConstant.ENABLED_MARKET)), this.l2KeyPair,
+                            apiCredential.getAccountId(), symbol, size, orderPrice, limitFee, expireTime, clientOrderId, side);
+        }
+        catch (IOException e) {
+            throw new ApexProApiException(EXEC_ERROR, "An error occurred when signing an order with l2KeyPair");
         }
 
         RestApiRequest<Order> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToPost("symbol", symbol)
-                .putToPost("side", side.name())
-                .putToPost("type", type.name())
-                .putToPost("size", size.toPlainString())
-                .putToPost("price", orderPrice.toPlainString())
-                .putToPost("limitFee", limitFee.toPlainString())
-                .putToPost("expiration", String.valueOf(expireTime))
-                .putToPost("triggerPrice",String.valueOf(triggerPrice))
-                .putToPost("triggerPriceType",triggerPriceType)
-                .putToPost("timeInForce", timeInForce.name())
-                .putToPost("clientId", clientOrderId)
-                .putToPost("signature", signature)
-                .putToPost("reduceOnly", String.valueOf(reduceOnly));
+        RequestParamsBuilder builder =
+                RequestParamsBuilder.build().putToPost("symbol", symbol).putToPost("side", side.name()).putToPost("type", type.name())
+                                    .putToPost("size", size.toPlainString()).putToPost("price", orderPrice.toPlainString())
+                                    .putToPost("limitFee", limitFee.toPlainString()).putToPost("expiration", String.valueOf(expireTime))
+                                    .putToPost("triggerPrice", String.valueOf(triggerPrice)).putToPost("triggerPriceType", triggerPriceType)
+                                    .putToPost("timeInForce", timeInForce.name()).putToPost("clientId", clientOrderId)
+                                    .putToPost("signature", signature).putToPost("reduceOnly", String.valueOf(reduceOnly));
 
-        request.request = createRequest(serverUrl, "/v1/create-order", builder);
+        request.request = createRequest(serverUrl, "/v2/create-order", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             Order order = new Order();
@@ -580,7 +591,8 @@ class RestApiRequestImpl {
             order.setPrice(new BigDecimal(jsonWrapper.getString("price")));
             order.setLimitFee(new BigDecimal(jsonWrapper.getString("limitFee")));
             order.setFee(new BigDecimal(!jsonWrapper.getString("fee").equals("") ? jsonWrapper.getString("fee") : "0"));
-            order.setLiquidateFee(new BigDecimal(!jsonWrapper.getString("liquidateFee").equals("") ? jsonWrapper.getString("liquidateFee") : "0"));
+            order.setLiquidateFee(
+                    new BigDecimal(!jsonWrapper.getString("liquidateFee").equals("") ? jsonWrapper.getString("liquidateFee") : "0"));
             order.setTriggerPrice(new BigDecimal(jsonWrapper.getString("triggerPrice")));
             order.setSize(new BigDecimal(jsonWrapper.getString("size")));
             order.setType(jsonWrapper.getString("type"));
@@ -610,9 +622,8 @@ class RestApiRequestImpl {
 
     public RestApiRequest<Map<String, String>> cancelOrder(String id) {
         RestApiRequest<Map<String, String>> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToPost("id", id);
-        request.request = createRequest(serverUrl, "/v1/delete-order", builder);
+        RequestParamsBuilder builder = RequestParamsBuilder.build().putToPost("id", id);
+        request.request = createRequest(serverUrl, "/v2/delete-order", builder);
         request.jsonParser = (jsonWrapper -> {
             Map<String, String> dataMap = new HashMap<>();
             dataMap.put("data", jsonWrapper.getString("data"));
@@ -623,9 +634,8 @@ class RestApiRequestImpl {
 
     public RestApiRequest<Map<String, String>> cancelOrderByClientId(String id) {
         RestApiRequest<Map<String, String>> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToPost("id", id);
-        request.request = createRequest(serverUrl, "/v1/delete-client-order-id", builder);
+        RequestParamsBuilder builder = RequestParamsBuilder.build().putToPost("id", id);
+        request.request = createRequest(serverUrl, "/v2/delete-client-order-id", builder);
         request.jsonParser = (jsonWrapper -> {
             Map<String, String> dataMap = new HashMap<>();
             dataMap.put("data", jsonWrapper.getString("data"));
@@ -637,7 +647,7 @@ class RestApiRequestImpl {
     public RestApiRequest<OpenOrders> getOpenOrders() {
         RestApiRequest<OpenOrders> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build();
-        request.request = createRequest(serverUrl, "/v1/open-orders", builder);
+        request.request = createRequest(serverUrl, "/v2/open-orders", builder);
         request.jsonParser = (jsonWrapper -> {
             OpenOrders result = new OpenOrders();
             List<Order> orders = new LinkedList<>();
@@ -682,25 +692,24 @@ class RestApiRequestImpl {
 
     public RestApiRequest<Map<String, String>> cancelAllOpenOrders(String symbol) {
         RestApiRequest<Map<String, String>> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToPost("symbol", symbol);
-        request.request = createRequest(serverUrl, "/v1/delete-open-orders", builder);
+        RequestParamsBuilder builder = RequestParamsBuilder.build().putToPost("symbol", symbol);
+        request.request = createRequest(serverUrl, "/v2/delete-open-orders", builder);
         request.jsonParser = (jsonWrapper -> new HashMap<>());
         return request;
     }
 
-    public RestApiRequest<HistoryOrders> getHistoryOrders(String symbol, OrderStatus status, OrderSide side, OrderType orderType, Long beginTimeInclusive, Long endTimeExclusive, Integer limit, Integer page) {
+    public RestApiRequest<HistoryOrders> getHistoryOrders(String symbol, OrderStatus status, OrderSide side, OrderType orderType,
+                                                          Long beginTimeInclusive, Long endTimeExclusive, Integer limit, Integer page)
+    {
         RestApiRequest<HistoryOrders> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToUrl("symbol", symbol)
-                .putToUrl("status", status != null ? status.name() : "")
-                .putToUrl("side", side != null ? side.name() : "")
-                .putToUrl("type", orderType != null ? orderType.name() : "")
-                .putToUrl("limit", String.valueOf(limit))
-                .putToUrl("beginTimeInclusive", beginTimeInclusive > 0 ? String.valueOf(beginTimeInclusive) : "")
-                .putToUrl("endTimeExclusive", endTimeExclusive > 0 ? String.valueOf(endTimeExclusive) : "")
-                .putToUrl("page", String.valueOf(page));
-        request.request = createRequest(serverUrl, "/v1/history-orders", builder);
+        RequestParamsBuilder builder =
+                RequestParamsBuilder.build().putToUrl("symbol", symbol).putToUrl("status", status != null ? status.name() : "")
+                                    .putToUrl("side", side != null ? side.name() : "")
+                                    .putToUrl("type", orderType != null ? orderType.name() : "").putToUrl("limit", String.valueOf(limit))
+                                    .putToUrl("beginTimeInclusive", beginTimeInclusive > 0 ? String.valueOf(beginTimeInclusive) : "")
+                                    .putToUrl("endTimeExclusive", endTimeExclusive > 0 ? String.valueOf(endTimeExclusive) : "")
+                                    .putToUrl("page", String.valueOf(page));
+        request.request = createRequest(serverUrl, "/v2/history-orders", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             HistoryOrders result = new HistoryOrders();
@@ -747,9 +756,8 @@ class RestApiRequestImpl {
 
     public RestApiRequest<Order> getOrder(String id) {
         RestApiRequest<Order> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToUrl("id", id);
-        request.request = createRequest(serverUrl, "/v1/get-order", builder);
+        RequestParamsBuilder builder = RequestParamsBuilder.build().putToUrl("id", id);
+        request.request = createRequest(serverUrl, "/v2/get-order", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             Order order = new Order();
@@ -761,7 +769,8 @@ class RestApiRequestImpl {
             order.setPrice(new BigDecimal(jsonWrapper.getString("price")));
             order.setLimitFee(new BigDecimal(jsonWrapper.getString("limitFee")));
             order.setFee(new BigDecimal(!jsonWrapper.getString("fee").equals("") ? jsonWrapper.getString("fee") : "0"));
-            order.setLiquidateFee(new BigDecimal(!jsonWrapper.getString("liquidateFee").equals("") ? jsonWrapper.getString("liquidateFee") : "0"));
+            order.setLiquidateFee(
+                    new BigDecimal(!jsonWrapper.getString("liquidateFee").equals("") ? jsonWrapper.getString("liquidateFee") : "0"));
             order.setIsPositionTpsl(jsonWrapper.getBoolean("isPositionTpsl"));
             order.setTriggerPrice(new BigDecimal(jsonWrapper.getString("triggerPrice")));
             order.setSize(new BigDecimal(jsonWrapper.getString("size")));
@@ -807,7 +816,6 @@ class RestApiRequestImpl {
             }
 
 
-
             return order;
         });
         return request;
@@ -815,9 +823,8 @@ class RestApiRequestImpl {
 
     public RestApiRequest<Order> getOrderByClientOrderId(String id) {
         RestApiRequest<Order> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToPost("id", id);
-        request.request = createRequest(serverUrl, "/v1/delete-client-order-id", builder);
+        RequestParamsBuilder builder = RequestParamsBuilder.build().putToPost("id", id);
+        request.request = createRequest(serverUrl, "/v2/delete-client-order-id", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             Order order = new Order();
@@ -829,7 +836,8 @@ class RestApiRequestImpl {
             order.setPrice(new BigDecimal(jsonWrapper.getString("price")));
             order.setLimitFee(new BigDecimal(jsonWrapper.getString("limitFee")));
             order.setFee(new BigDecimal(!jsonWrapper.getString("fee").equals("") ? jsonWrapper.getString("fee") : "0"));
-            order.setLiquidateFee(new BigDecimal(!jsonWrapper.getString("liquidateFee").equals("") ? jsonWrapper.getString("liquidateFee") : "0"));
+            order.setLiquidateFee(
+                    new BigDecimal(!jsonWrapper.getString("liquidateFee").equals("") ? jsonWrapper.getString("liquidateFee") : "0"));
             order.setIsPositionTpsl(jsonWrapper.getBoolean("isPositionTpsl"));
             order.setTriggerPrice(new BigDecimal(jsonWrapper.getString("triggerPrice")));
             order.setSize(new BigDecimal(jsonWrapper.getString("size")));
@@ -839,7 +847,7 @@ class RestApiRequestImpl {
             order.setExpiresTime(jsonWrapper.getLong("expiresAt"));
             order.setStatus(jsonWrapper.getString("status"));
             order.setTimeInForce(jsonWrapper.getString("timeInForce"));
-            order.setPostOnly(jsonWrapper.containKey("postOnly") ? jsonWrapper.getBoolean("postOnly"):false);
+            order.setPostOnly(jsonWrapper.containKey("postOnly") ? jsonWrapper.getBoolean("postOnly") : false);
             order.setReduceOnly(jsonWrapper.getBoolean("reduceOnly"));
             order.setLatestMatchFillPrice(new BigDecimal(jsonWrapper.getString("latestMatchFillPrice")));
             order.setCumMatchFillSize(new BigDecimal(jsonWrapper.getString("cumMatchFillSize")));
@@ -853,17 +861,18 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<DepositList> getDepositList(Integer limit, Long page, String currencyId, Long beginTimeInclusive, Long endTimeExclusive, List<String> chainIds) {
+    public RestApiRequest<DepositList> getDepositList(Integer limit, Long page, String currencyId, Long beginTimeInclusive,
+                                                      Long endTimeExclusive, List<String> chainIds)
+    {
         RestApiRequest<DepositList> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToUrl("limit", String.valueOf(limit))
-                .putToUrl("page", String.valueOf(page))
-                .putToUrl("currencyId", currencyId)
-                .putToUrl("beginTimeInclusive", beginTimeInclusive!=null?String.valueOf(beginTimeInclusive):"")
-                .putToUrl("endTimeExclusive", endTimeExclusive!=null?String.valueOf(endTimeExclusive):"")
-                .putToUrl("chainIds", chainIds!=null?Strings.join(chainIds,","):"")
-                .putToUrl("transferType", "DEPOSIT,CROSS_DEPOSIT");
-        request.request = createRequest(serverUrl, "/v1/transfers", builder);
+        RequestParamsBuilder builder =
+                RequestParamsBuilder.build().putToUrl("limit", String.valueOf(limit)).putToUrl("page", String.valueOf(page))
+                                    .putToUrl("currencyId", currencyId)
+                                    .putToUrl("beginTimeInclusive", beginTimeInclusive != null ? String.valueOf(beginTimeInclusive) : "")
+                                    .putToUrl("endTimeExclusive", endTimeExclusive != null ? String.valueOf(endTimeExclusive) : "")
+                                    .putToUrl("chainIds", chainIds != null ? Strings.join(chainIds, ",") : "")
+                                    .putToUrl("transferType", "DEPOSIT,CROSS_DEPOSIT");
+        request.request = createRequest(serverUrl, "/v2/transfers", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             DepositList result = new DepositList();
@@ -896,13 +905,12 @@ class RestApiRequestImpl {
 
     public RestApiRequest<WithdrawalList> getWithdrawList(Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive) {
         RestApiRequest<WithdrawalList> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToUrl("limit", String.valueOf(limit))
-                .putToUrl("page", String.valueOf(page))
-                .putToUrl("beginTimeInclusive", beginTimeInclusive != null ? String.valueOf(beginTimeInclusive) : "")
-                .putToUrl("endTimeExclusive", endTimeExclusive != null ? String.valueOf(endTimeExclusive) : "")
-                .putToUrl("transferType", "WITHDRAW,FAST_WITHDRAW,CROSS_WITHDRAW");
-        request.request = createRequest(serverUrl, "/v1/transfers", builder);
+        RequestParamsBuilder builder =
+                RequestParamsBuilder.build().putToUrl("limit", String.valueOf(limit)).putToUrl("page", String.valueOf(page))
+                                    .putToUrl("beginTimeInclusive", beginTimeInclusive != null ? String.valueOf(beginTimeInclusive) : "")
+                                    .putToUrl("endTimeExclusive", endTimeExclusive != null ? String.valueOf(endTimeExclusive) : "")
+                                    .putToUrl("transferType", "WITHDRAW,FAST_WITHDRAW,CROSS_WITHDRAW");
+        request.request = createRequest(serverUrl, "/v2/transfers", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             WithdrawalList result = new WithdrawalList();
@@ -921,7 +929,7 @@ class RestApiRequestImpl {
                 withdrawal.setUpdatedTime(item.getLong("updatedTime"));
                 withdrawal.setClientId(item.getString("clientId"));
                 withdrawal.setChainId(item.getString("chainId"));
-                withdrawal.setFee(item.containKey("fee") ? new BigDecimal(item.getString("fee")): new BigDecimal(0));
+                withdrawal.setFee(item.containKey("fee") ? new BigDecimal(item.getString("fee")) : new BigDecimal(0));
                 withdrawals.add(withdrawal);
             });
             result.setWithdrawals(withdrawals);
@@ -931,16 +939,14 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<WithdrawalResult> createWithdrawalOrder(BigDecimal amount, String clientId, Long expiration, String currencyId, String address,String signature) {
+    public RestApiRequest<WithdrawalResult> createWithdrawalOrder(BigDecimal amount, String clientId, Long expiration, String currencyId,
+                                                                  String address, String signature)
+    {
         RestApiRequest<WithdrawalResult> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToPost("amount", amount)
-                .putToPost("clientId", clientId)
-                .putToPost("expiration", expiration)
-                .putToPost("asset", currencyId)
-                .putToPost("ethAddress",address)
-                .putToPost("signature", signature);
-        request.request = createRequest(serverUrl, "/v1/create-withdrawal-to-address", builder);
+        RequestParamsBuilder builder =
+                RequestParamsBuilder.build().putToPost("amount", amount).putToPost("clientId", clientId).putToPost("expiration", expiration)
+                                    .putToPost("asset", currencyId).putToPost("ethAddress", address).putToPost("signature", signature);
+        request.request = createRequest(serverUrl, "/v2/create-withdrawal-to-address", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             JsonWrapper withdrawJsonWrapper = jsonWrapper.getJsonObject("withdraw");
@@ -952,25 +958,25 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<WithdrawalResult> fastWithdraw(BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId, String lpAccountId) {
+    public RestApiRequest<WithdrawalResult> fastWithdraw(BigDecimal amount, String clientId, Long expiration, String currencyId,
+                                                         String signature, String address, BigDecimal fee, Long chainId)
+    {
 
-        Optional< MultiChain.Chain> chain = ExchangeInfo.multiChain().getChains().stream().filter(f->f.getChainId() == chainId).findAny();
-        MultiChain.MultiChainToken multiChainToken = chain.get().getTokens().stream().filter(t -> t.getToken().equals(currencyId)).findAny().get();
+        String lpAccountId= String.valueOf(ExchangeInfo.global(ApexSupportedMarket.valueOf(config.getProperty(ApexConstant.ENABLED_MARKET))).getFastWithdrawAccountId());
+        Optional<MultiChain.Chain> chain =
+                ExchangeInfo.multiChain(ApexSupportedMarket.valueOf(config.getProperty(ApexConstant.ENABLED_MARKET))).getChains().stream()
+                            .filter(f -> f.getChainId() == chainId).findAny();
+        MultiChain.MultiChainToken multiChainToken =
+                chain.get().getTokens().stream().filter(t -> t.getToken().equals(currencyId)).findAny().get();
 
 
         RestApiRequest<WithdrawalResult> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToPost("amount", amount)
-                .putToPost("asset", currencyId)
-                .putToPost("expiration", expiration)
-                .putToPost("ethAddress", address)
-                .putToPost("erc20Address", multiChainToken.getTokenAddress())
-                .putToPost("clientId", clientId)
-                .putToPost("signature", signature)
-                .putToPost("fee", fee)
-                .putToPost("chainId", chainId)
-                .putToPost("lpAccountId", lpAccountId);
-        request.request = createRequest(serverUrl, "/v1/fast-withdraw", builder);
+        RequestParamsBuilder builder =
+                RequestParamsBuilder.build().putToPost("amount", amount).putToPost("asset", currencyId).putToPost("expiration", expiration)
+                                    .putToPost("ethAddress", address).putToPost("erc20Address", multiChainToken.getTokenAddress())
+                                    .putToPost("clientId", clientId).putToPost("signature", signature).putToPost("fee", fee)
+                                    .putToPost("chainId", chainId).putToPost("lpAccountId", lpAccountId);
+        request.request = createRequest(serverUrl, "/v2/fast-withdraw", builder);
         request.jsonParser = (jsonWrapper -> {
 
             jsonWrapper = jsonWrapper.getJsonObject("data");
@@ -984,25 +990,25 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<WithdrawalResult> crossChainWithdraw(BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId, String lpAccountId) {
+    public RestApiRequest<WithdrawalResult> crossChainWithdraw(BigDecimal amount, String clientId, Long expiration, String currencyId,
+                                                               String signature, String address, BigDecimal fee, Long chainId)
+    {
 
-        Optional< MultiChain.Chain> chain = ExchangeInfo.multiChain().getChains().stream().filter(f->f.getChainId() == chainId).findAny();
-        MultiChain.MultiChainToken multiChainToken = chain.get().getTokens().stream().filter(t -> t.getToken().equals(currencyId)).findAny().get();
+        String lpAccountId= String.valueOf(ExchangeInfo.global(ApexSupportedMarket.valueOf(config.getProperty(ApexConstant.ENABLED_MARKET))).getFastWithdrawAccountId());
+        Optional<MultiChain.Chain> chain =
+                ExchangeInfo.multiChain(ApexSupportedMarket.valueOf(config.getProperty(ApexConstant.ENABLED_MARKET))).getChains().stream()
+                            .filter(f -> f.getChainId() == chainId).findAny();
+        MultiChain.MultiChainToken multiChainToken =
+                chain.get().getTokens().stream().filter(t -> t.getToken().equals(currencyId)).findAny().get();
 
 
         RestApiRequest<WithdrawalResult> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToPost("amount", amount)
-                .putToPost("asset", currencyId)
-                .putToPost("expiration", expiration)
-                .putToPost("ethAddress", address)
-                .putToPost("erc20Address", multiChainToken.getTokenAddress())
-                .putToPost("clientId", clientId)
-                .putToPost("signature", signature)
-                .putToPost("fee", fee)
-                .putToPost("chainId", chainId)
-                .putToPost("lpAccountId", lpAccountId);
-        request.request = createRequest(serverUrl, "/v1/cross-chain-withdraw", builder);
+        RequestParamsBuilder builder =
+                RequestParamsBuilder.build().putToPost("amount", amount).putToPost("asset", currencyId).putToPost("expiration", expiration)
+                                    .putToPost("ethAddress", address).putToPost("erc20Address", multiChainToken.getTokenAddress())
+                                    .putToPost("clientId", clientId).putToPost("signature", signature).putToPost("fee", fee)
+                                    .putToPost("chainId", chainId).putToPost("lpAccountId", lpAccountId);
+        request.request = createRequest(serverUrl, "/v2/cross-chain-withdraw", builder);
         request.jsonParser = (jsonWrapper -> {
 
             jsonWrapper = jsonWrapper.getJsonObject("data");
@@ -1018,10 +1024,9 @@ class RestApiRequestImpl {
 
     public RestApiRequest<WithdrawalFee> getWithdrawalFee(BigDecimal amount, long chainId) {
         RestApiRequest<WithdrawalFee> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToUrl("amount", amount.toPlainString())
-                .putToUrl("chainId", String.valueOf(chainId));
-        request.request = createRequest(serverUrl, "/v1/uncommon-withdraw-fee", builder);
+        RequestParamsBuilder builder =
+                RequestParamsBuilder.build().putToUrl("amount", amount.toPlainString()).putToUrl("chainId", String.valueOf(chainId));
+        request.request = createRequest(serverUrl, "/v2/uncommon-withdraw-fee", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             WithdrawalFee result = new WithdrawalFee();
@@ -1035,11 +1040,9 @@ class RestApiRequestImpl {
 
     public RestApiRequest<OrderBookPrice> getWorstPrice(String symbol, BigDecimal size, OrderSide side) {
         RestApiRequest<OrderBookPrice> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToUrl("symbol", symbol)
-                .putToUrl("side", side.name())
-                .putToUrl("size", size.toPlainString());
-        request.request = createRequest(serverUrl, "/v1/get-worst-price", builder);
+        RequestParamsBuilder builder = RequestParamsBuilder.build().putToUrl("symbol", symbol).putToUrl("side", side.name())
+                                                           .putToUrl("size", size.toPlainString());
+        request.request = createRequest(serverUrl, "/v2/get-worst-price", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
 
@@ -1053,17 +1056,18 @@ class RestApiRequestImpl {
     }
 
 
-    public RestApiRequest<FundingRates> getFundingRate(String symbol, Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive, PositionSide positionSide) {
+    public RestApiRequest<FundingRates> getFundingRate(String symbol, Integer limit, Long page, Long beginTimeInclusive,
+                                                       Long endTimeExclusive, PositionSide positionSide)
+    {
         RestApiRequest<FundingRates> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToUrl("symbol", symbol)
-                .putToUrl("limit", limit != null? String.valueOf(limit) : "")
-                .putToUrl("page", page != null ? String.valueOf(page) : "")
-                .putToUrl("beginTimeInclusive",beginTimeInclusive !=null ? String.valueOf(beginTimeInclusive) : "")
-                .putToUrl("endTimeExclusive",endTimeExclusive != null ? String.valueOf(endTimeExclusive) : "")
-                .putToUrl("positionSide",positionSide != null ? positionSide.name() : "");
+        RequestParamsBuilder builder =
+                RequestParamsBuilder.build().putToUrl("symbol", symbol).putToUrl("limit", limit != null ? String.valueOf(limit) : "")
+                                    .putToUrl("page", page != null ? String.valueOf(page) : "")
+                                    .putToUrl("beginTimeInclusive", beginTimeInclusive != null ? String.valueOf(beginTimeInclusive) : "")
+                                    .putToUrl("endTimeExclusive", endTimeExclusive != null ? String.valueOf(endTimeExclusive) : "")
+                                    .putToUrl("positionSide", positionSide != null ? positionSide.name() : "");
 
-        request.request = createRequest(serverUrl, "/v1/funding", builder);
+        request.request = createRequest(serverUrl, "/v2/funding", builder);
         request.jsonParser = (jsonWrapper -> {
             FundingRates fundingRates = new FundingRates();
 
@@ -1096,10 +1100,9 @@ class RestApiRequestImpl {
 
     public RestApiRequest<Ticker> getTicker(String symbol) {
         RestApiRequest<Ticker> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build()
-                .putToUrl("symbol", symbol.replace("-",""));
+        RequestParamsBuilder builder = RequestParamsBuilder.build().putToUrl("symbol", symbol.replace("-", ""));
 
-        request.request = createRequest(serverUrl, "/v1/ticker", builder);
+        request.request = createRequest(serverUrl, "/v2/ticker", builder);
         request.jsonParser = (jsonWrapper -> {
             JsonWrapperArray jsonWrapperArray = jsonWrapper.getJsonArray("data");
 
@@ -1128,10 +1131,11 @@ class RestApiRequestImpl {
     public RestApiRequest<Void> setInitialMarginRate(String symbol, BigDecimal initialMarginRate) {
         RestApiRequest<Void> request = new RestApiRequest<>();
 
-        RequestParamsBuilder builder = RequestParamsBuilder.build().putToPost("symbol", StringUtils.isNotEmpty(symbol) ? symbol :
-                ApiConstants.DEFAULT_ORDER_ASSET).putToPost("initialMarginRate", initialMarginRate.toPlainString());
+        RequestParamsBuilder builder =
+                RequestParamsBuilder.build().putToPost("symbol", StringUtils.isNotEmpty(symbol) ? symbol : ApiConstants.DEFAULT_ORDER_ASSET)
+                                    .putToPost("initialMarginRate", initialMarginRate.toPlainString());
 
-        request.request = createRequest(serverUrl, "/v1/set-initial-margin-rate", builder);
+        request.request = createRequest(serverUrl, "/v2/set-initial-margin-rate", builder);
         return request;
     }
 }

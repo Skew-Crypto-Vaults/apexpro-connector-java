@@ -27,6 +27,7 @@ public class ApiConstants {
 
     // ------------ Assets ------------
     public static final String ASSET_USDC = "USDC";
+
     public static final String COLLATERAL_ASSET = ASSET_USDC;
 
     public static final String DEFAULT_ORDER_ASSET = "BTC-USDC";

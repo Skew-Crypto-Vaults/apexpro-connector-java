@@ -226,9 +226,6 @@
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
-                    <excludeDependencies>
-                        <excludeDependency>org.web3j:core</excludeDependency>
-                    </excludeDependencies>
                 </configuration>
                 <executions>
                     <execution>

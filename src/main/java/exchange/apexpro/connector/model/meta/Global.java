@@ -32,7 +32,7 @@ public class Global {
 
     private final String starkExContractAddress;//
 
-    private final long bybitWithdrawAccountId;//bybitwithdraw备付金账户id
+    private final String bybitWithdrawAccountId;//bybitwithdraw备付金账户id
     private final String bybitWithdrawL2Key;//bybitwithdraw备付金账户l2key
 
 }

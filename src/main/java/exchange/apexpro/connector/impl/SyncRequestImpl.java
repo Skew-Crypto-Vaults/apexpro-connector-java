@@ -136,12 +136,12 @@ public class SyncRequestImpl implements SyncRequestClient {
 
     @Override
     public WithdrawalResult createFastWithdrawalOrder(BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId) {
-        return RestApiInvoker.callSync(requestImpl.fastWithdraw(amount, clientId, expiration, currencyId, signature, address, fee, chainId, String.valueOf(ExchangeInfo.global().getFastWithdrawAccountId())));
+        return RestApiInvoker.callSync(requestImpl.fastWithdraw(amount, clientId, expiration, currencyId, signature, address, fee, chainId));
     }
 
     @Override
     public WithdrawalResult createCrossChainWithdrawalOrder(BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId) {
-        return RestApiInvoker.callSync(requestImpl.crossChainWithdraw(amount, clientId, expiration, currencyId, signature, address, fee, chainId,String.valueOf(ExchangeInfo.global().getCrossChainAccountId())));
+        return RestApiInvoker.callSync(requestImpl.crossChainWithdraw(amount, clientId, expiration, currencyId, signature, address, fee, chainId));
     }
 
     @Override

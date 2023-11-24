@@ -2,6 +2,7 @@ package exchange.apexpro.connector.examples.wallet;
 
 import exchange.apexpro.connector.ApexProCredentials;
 import exchange.apexpro.connector.SyncRequestClient;
+import exchange.apexpro.connector.enums.ApexSupportedMarket;
 import exchange.apexpro.connector.examples.config.PrivateConfig;
 import exchange.apexpro.connector.impl.L2OrderSigner;
 import exchange.apexpro.connector.model.meta.ExchangeInfo;
@@ -36,7 +37,8 @@ public class CreateWithdrawalOrder {
         WithdrawalFee withdrawalFee = syncRequestClient.getWithdrawalFee(amount,chainId);
         BigDecimal fee = withdrawalFee.getWithdrawalFee();
 
-        String signature = L2OrderSigner.signCrossChainWithdraw(l2KeyPair, apiCredential.getAccountId(), amount, clientId, expireTimeInHour, currency, address, fee, chainId);
+        String signature = L2OrderSigner.signCrossChainWithdraw(ApexSupportedMarket.BTC_USDT,l2KeyPair, apiCredential.getAccountId(),
+                amount, clientId, expireTimeInHour, currency, address, fee, chainId);
         WithdrawalResult result = syncRequestClient.createFastWithdrawalOrder(amount, clientId, expireTime, currency, signature, address, fee, chainId);
         System.out.println(result);
     }
