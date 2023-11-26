@@ -1,30 +1,17 @@
 package exchange.apexpro.connector.model.account;
 
+import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.util.List;
 
-/**
- * Account
- */
+@Builder
 @Data
 public class Account {
-
-    private String id;
-
-    private String starkKey;
-
-    private String positionId;
-
+    private long createdAt;
     private BigDecimal takerFeeRate;
-
     private BigDecimal makerFeeRate;
-
-    private Long createdTime;
-
-    private List<Wallet> wallets;
-
-    private List<OpenPosition> openPositions;
-
+    private BigDecimal minInitialMarginRate;
+    private String status;
+    private String token;
 }

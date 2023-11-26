@@ -2,6 +2,7 @@ package exchange.apexpro.connector.impl;
 
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import exchange.apexpro.connector.ApexProCredentials;
 import exchange.apexpro.connector.RequestOptions;
 import exchange.apexpro.connector.constant.ApiConstants;
@@ -11,6 +12,7 @@ import exchange.apexpro.connector.impl.utils.ApiSignHelper;
 import exchange.apexpro.connector.impl.utils.JsonWrapper;
 import exchange.apexpro.connector.impl.utils.JsonWrapperArray;
 import exchange.apexpro.connector.impl.utils.RequestParamsBuilder;
+import exchange.apexpro.connector.impl.utils.json.CostBigDecimalAdapter;
 import exchange.apexpro.connector.model.account.*;
 import exchange.apexpro.connector.model.enums.*;
 import exchange.apexpro.connector.model.market.OrderBookPrice;
@@ -204,50 +206,16 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<Account> getAccount() {
-        RestApiRequest<Account> request = new RestApiRequest<>();
+    public RestApiRequest<AccountDetails> getAccount() {
+        RestApiRequest<AccountDetails> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build();
         request.request = createRequest(serverUrl, "/v2/account", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
-            Account account = new Account();
-            account.setId(jsonWrapper.getString("id"));
-            account.setStarkKey(jsonWrapper.getString("starkKey"));
-            account.setPositionId(jsonWrapper.getString("positionId"));
-            account.setTakerFeeRate(new BigDecimal(jsonWrapper.getString("takerFeeRate")));
-            account.setMakerFeeRate(new BigDecimal(jsonWrapper.getString("makerFeeRate")));
-            account.setCreatedTime(jsonWrapper.getLong("createdAt"));
-            List<Wallet> walletList = new LinkedList<>();
-            JsonWrapperArray walletsArray = jsonWrapper.getJsonArray("wallets");
-            walletsArray.forEach((item) -> {
-                Wallet wallet = new Wallet();
-                wallet.setAsset(item.getString("asset"));
-                wallet.setBalance(item.getString("balance"));
-                wallet.setPendingDepositAmount(item.getString("pendingDepositAmount"));
-                wallet.setPendingWithdrawAmount(item.getString("pendingWithdrawAmount"));
-                wallet.setPendingTransferOutAmount(item.getString("pendingTransferOutAmount"));
-                wallet.setPendingTransferInAmount(item.getString("pendingTransferInAmount"));
-                walletList.add(wallet);
-            });
-            account.setWallets(walletList);
-
-            List<OpenPosition> openPositionList = new LinkedList<>();
-            JsonWrapperArray openPositionsArray = jsonWrapper.getJsonArray("openPositions");
-            openPositionsArray.forEach((item) -> {
-                OpenPosition position = new OpenPosition();
-                position.setSymbol(item.getString("symbol"));
-                position.setSide(item.getString("side"));
-                position.setSize(item.getString("size"));
-                position.setEntryPrice(item.getString("entryPrice"));
-                position.setFee(item.getString("fee"));
-                position.setFundingFee(item.getString("fundingFee"));
-                position.setCreatedAt(item.getString("createdAt"));
-                position.setUpdatedTime(item.getString("updatedTime"));
-                position.setLightNumbers(item.getString("lightNumbers"));
-                openPositionList.add(position);
-            });
-            account.setOpenPositions(openPositionList);
-            return account;
+            GsonBuilder gsonBuilder = new GsonBuilder();
+            gsonBuilder.registerTypeAdapter(BigDecimal.class, new CostBigDecimalAdapter());
+            Gson gson = gsonBuilder.create();
+           return gson.fromJson(jsonWrapper.getJson().toJSONString(), AccountDetails.class);
         });
         return request;
     }

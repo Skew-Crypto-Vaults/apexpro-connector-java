@@ -40,7 +40,7 @@ public class SyncRequestImpl implements SyncRequestClient {
 
 
     @Override
-    public Account getAccount() {
+    public AccountDetails getAccount() {
         return RestApiInvoker.callSync(requestImpl.getAccount());
     }
 

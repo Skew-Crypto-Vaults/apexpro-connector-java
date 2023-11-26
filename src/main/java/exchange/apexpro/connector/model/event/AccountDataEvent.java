@@ -1,6 +1,7 @@
 package exchange.apexpro.connector.model.event;
 
 import exchange.apexpro.connector.model.account.Account;
+import exchange.apexpro.connector.model.account.AccountDetails;
 import exchange.apexpro.connector.model.account.Position;
 import exchange.apexpro.connector.model.account.Wallet;
 import exchange.apexpro.connector.model.trade.Order;
@@ -26,7 +27,7 @@ public class AccountDataEvent {
     List<Order> orders;
     List<Position> positions;
     List<Wallet> wallets;
-    Account account;
+    AccountDetails account;
     List<OrderFill> orderFills;
 
 

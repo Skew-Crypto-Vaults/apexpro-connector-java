@@ -81,7 +81,7 @@ public interface SyncRequestClient {
      *
      * @return account
      */
-    Account getAccount();
+    AccountDetails getAccount();
 
 
     /**

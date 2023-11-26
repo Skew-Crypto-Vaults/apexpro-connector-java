@@ -392,7 +392,7 @@ class WebsocketRequestImpl {
                 JsonWrapperArray jsonPositions =  jsonWrapper.getJsonArray("positions");
                 List<Position> positions = new ArrayList<>();
                 jsonPositions.forEach(item -> {
-                    Position position = new Position();
+                    Position position = Position.builder().build();
                     position.setAccountId(item.getString("accountId"));
                     position.setClosedTime(item.getLong("closedAt"));
                     position.setCustomInitialMarginRate(new BigDecimal(item.getString("customInitialMarginRate")));
@@ -416,13 +416,13 @@ class WebsocketRequestImpl {
                 JsonWrapperArray jsonWallets =  jsonWrapper.getJsonArray("wallets");
                 List<Wallet> wallets = new ArrayList<>();
                 jsonWallets.forEach(item -> {
-                    Wallet wallet = new Wallet();
+                    Wallet wallet =  Wallet.builder().build();
                     wallet.setAsset(item.getString("asset"));
-                    wallet.setBalance(item.getString("balance"));
-                    wallet.setPendingDepositAmount(item.getString("pendingDepositAmount"));
-                    wallet.setPendingTransferInAmount(item.getString("pendingTransferInAmount"));
-                    wallet.setPendingWithdrawAmount(item.getString("pendingWithdrawAmount"));
-                    wallet.setPendingTransferOutAmount(item.getString("pendingTransferOutAmount"));
+                    wallet.setBalance(new BigDecimal(item.getString("balance")));
+                    wallet.setPendingDepositAmount(new BigDecimal(item.getString("pendingDepositAmount")));
+                    wallet.setPendingTransferInAmount(new BigDecimal(item.getString("pendingTransferInAmount")));
+                    wallet.setPendingWithdrawAmount(new BigDecimal(item.getString("pendingWithdrawAmount")));
+                    wallet.setPendingTransferOutAmount(new BigDecimal(item.getString("pendingTransferOutAmount")));
                     wallets.add(wallet);
                 });
                 result.setWallets(wallets);
