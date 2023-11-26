@@ -1,6 +1,7 @@
 package exchange.apexpro.connector.impl;
 
 import exchange.apexpro.connector.SyncRequestClient;
+import exchange.apexpro.connector.enums.ApexSupportedMarket;
 import exchange.apexpro.connector.model.account.*;
 import exchange.apexpro.connector.model.enums.*;
 import exchange.apexpro.connector.model.market.OrderBookPrice;
@@ -33,8 +34,8 @@ public class SyncRequestImpl implements SyncRequestClient {
     }
 
     @Override
-    public ApiCredential onboard(String ethAddress, String onboardingSignature, String l2PublicKey, String l2KeyYCoordinate) {
-        return RestApiInvoker.callSync(requestImpl.onboard(ethAddress, onboardingSignature, l2PublicKey, l2KeyYCoordinate));
+    public ApiCredential onboard(String token,String ethAddress, String onboardingSignature, String l2PublicKey, String l2KeyYCoordinate) {
+        return RestApiInvoker.callSync(requestImpl.onboard(token,ethAddress, onboardingSignature, l2PublicKey, l2KeyYCoordinate));
     }
 
 
@@ -44,7 +45,7 @@ public class SyncRequestImpl implements SyncRequestClient {
     }
 
     @Override
-    public Balance getBalance() {
+    public ApexBalance getBalance() {
         return RestApiInvoker.callSync(requestImpl.getBalance());
     }
 
@@ -69,18 +70,21 @@ public class SyncRequestImpl implements SyncRequestClient {
     }
 
     @Override
-    public Order createOrder(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId, boolean reduceOnly) {
-        return RestApiInvoker.callSync(requestImpl.createOrderWithTPSL(symbol, side, type, size, price, maxFeeRate, timeInForce, clientOrderId, reduceOnly,null,null));
+    public Order createOrder(ApexSupportedMarket market,String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId, boolean reduceOnly) {
+        return RestApiInvoker.callSync(requestImpl.createOrderWithTPSL(market,symbol, side, type, size, price, maxFeeRate, timeInForce,
+                clientOrderId, reduceOnly,null,null));
     }
 
     @Override
-    public Order createOrderWithTPSL(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId, boolean reduceOnly,OrderParams withTakeProfit, OrderParams withStopLoss) {
-        return RestApiInvoker.callSync(requestImpl.createOrderWithTPSL(symbol, side, type, size, price, maxFeeRate, timeInForce, clientOrderId, reduceOnly,withTakeProfit,withStopLoss));
+    public Order createOrderWithTPSL(ApexSupportedMarket market,String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId, boolean reduceOnly,OrderParams withTakeProfit, OrderParams withStopLoss) {
+        return RestApiInvoker.callSync(requestImpl.createOrderWithTPSL(market,symbol, side, type, size, price, maxFeeRate, timeInForce,
+                clientOrderId, reduceOnly,withTakeProfit,withStopLoss));
     }
 
     @Override
-    public Order createConditionalOrder(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal triggerPrice,PriceType triggerPriceType, BigDecimal orderPrice, BigDecimal maxFeeRate,TimeInForce timeInForce, String clientOrderId, boolean reduceOnly) {
-        return RestApiInvoker.callSync(requestImpl.createConditionalOrder(symbol, side, type, size, triggerPrice, triggerPriceType,orderPrice, maxFeeRate, timeInForce, clientOrderId, reduceOnly));
+    public Order createConditionalOrder(ApexSupportedMarket market,String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal triggerPrice,PriceType triggerPriceType, BigDecimal orderPrice, BigDecimal maxFeeRate,TimeInForce timeInForce, String clientOrderId, boolean reduceOnly) {
+        return RestApiInvoker.callSync(requestImpl.createConditionalOrder(market,symbol, side, type, size, triggerPrice, triggerPriceType
+                ,orderPrice, maxFeeRate, timeInForce, clientOrderId, reduceOnly));
     }
 
 
@@ -135,13 +139,16 @@ public class SyncRequestImpl implements SyncRequestClient {
     }
 
     @Override
-    public WithdrawalResult createFastWithdrawalOrder(BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId) {
-        return RestApiInvoker.callSync(requestImpl.fastWithdraw(amount, clientId, expiration, currencyId, signature, address, fee, chainId));
+    public WithdrawalResult createFastWithdrawalOrder(ApexSupportedMarket market,BigDecimal amount, String clientId, Long expiration,
+                                                      String currencyId, String signature, String address, BigDecimal fee, Long chainId) {
+        return RestApiInvoker.callSync(requestImpl.fastWithdraw(market,amount, clientId, expiration, currencyId, signature, address, fee,
+                chainId));
     }
 
     @Override
-    public WithdrawalResult createCrossChainWithdrawalOrder(BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId) {
-        return RestApiInvoker.callSync(requestImpl.crossChainWithdraw(amount, clientId, expiration, currencyId, signature, address, fee, chainId));
+    public WithdrawalResult createCrossChainWithdrawalOrder(ApexSupportedMarket market,BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId) {
+        return RestApiInvoker.callSync(requestImpl.crossChainWithdraw(market,amount, clientId, expiration, currencyId, signature, address
+                , fee, chainId));
     }
 
     @Override

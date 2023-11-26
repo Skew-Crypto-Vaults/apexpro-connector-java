@@ -2,6 +2,7 @@ package exchange.apexpro.connector.examples.trade;
 
 import exchange.apexpro.connector.ApexProCredentials;
 import exchange.apexpro.connector.SyncRequestClient;
+import exchange.apexpro.connector.enums.ApexSupportedMarket;
 import exchange.apexpro.connector.examples.config.PrivateConfig;
 import exchange.apexpro.connector.model.enums.OrderSide;
 import exchange.apexpro.connector.model.enums.OrderType;
@@ -54,7 +55,7 @@ public class CreateOrderWithTPSL {
         ApexProCredentials apexProCredentials = PrivateConfig.loadConfig().getApexProCredentials(); //Load the credentials
         SyncRequestClient syncRequestClient = SyncRequestClient.create(apexProCredentials);
 
-        Order order = syncRequestClient.createOrderWithTPSL(symbol,
+        Order order = syncRequestClient.createOrderWithTPSL(ApexSupportedMarket.BSC_USDC,symbol,
                 side,
                 orderType,
                 size,

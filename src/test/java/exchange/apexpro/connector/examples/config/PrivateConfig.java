@@ -11,6 +11,8 @@ public class PrivateConfig {
 
     //Your ethereum private key
     private static String ETH_PRIVATE_KEY = "387bfabbf324497354364f7ad3ea47221f93636fe0fbb27c5f38dfab97350d11";
+
+    private static String TOKEN = "USDT";
     private static int network = ApiConstants.NETWORKID_TEST;
 
     public ApexProCredentials getApexProCredentials() {
@@ -21,7 +23,7 @@ public class PrivateConfig {
 
     public static PrivateConfig loadConfig() {
         PrivateConfig privateConfig = new PrivateConfig();
-        ApexProCredentials apexProCredentials = ApexProCredentials.create(ETH_PRIVATE_KEY,network);
+        ApexProCredentials apexProCredentials = ApexProCredentials.create(TOKEN,ETH_PRIVATE_KEY,network);
         privateConfig.apexProCredentials = apexProCredentials;
         return privateConfig;
     }

@@ -1,5 +1,6 @@
 package exchange.apexpro.connector;
 
+import exchange.apexpro.connector.enums.ApexSupportedMarket;
 import exchange.apexpro.connector.exception.ApexProApiException;
 import exchange.apexpro.connector.impl.ApiInternalFactory;
 import exchange.apexpro.connector.model.account.*;
@@ -72,7 +73,7 @@ public interface SyncRequestClient {
 
     String getExchangeInfo();
 
-    ApiCredential onboard(String ethAddress, String onboardingSignature, String l2PublicKey, String l2KeyYCoordinate);
+    ApiCredential onboard(String token,String ethAddress, String onboardingSignature, String l2PublicKey, String l2KeyYCoordinate);
 
     /**
      * GET Retrieve User Account Data
@@ -89,7 +90,7 @@ public interface SyncRequestClient {
      *
      * @return account
      */
-    Balance getBalance();
+    ApexBalance getBalance();
 
     /**
      * GET User Historial Profit and Loss
@@ -152,7 +153,7 @@ public interface SyncRequestClient {
      * @param reduceOnly      Reduce-only
      * @return order
      */
-    Order createOrder(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId, boolean reduceOnly);
+    Order createOrder(ApexSupportedMarket market,String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId, boolean reduceOnly);
 
 
     /**
@@ -172,7 +173,7 @@ public interface SyncRequestClient {
      * @param withStopLoss    if you want to place an order with some stop loss parameters, you can pass it here.
      * @return order
      */
-    Order createOrderWithTPSL(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId, boolean reduceOnly,OrderParams withTakeProfit, OrderParams withStopLoss);
+    Order createOrderWithTPSL(ApexSupportedMarket market,String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId, boolean reduceOnly,OrderParams withTakeProfit, OrderParams withStopLoss);
 
 
     /**
@@ -192,7 +193,7 @@ public interface SyncRequestClient {
      * @param reduceOnly      Reduce-only
      * @return order
      */
-    Order createConditionalOrder(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal triggerPrice,PriceType triggerPriceType, BigDecimal orderPrice,BigDecimal maxFeeRate,TimeInForce timeInForce, String clientOrderId, boolean reduceOnly);
+    Order createConditionalOrder(ApexSupportedMarket market,String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal triggerPrice,PriceType triggerPriceType, BigDecimal orderPrice,BigDecimal maxFeeRate,TimeInForce timeInForce, String clientOrderId, boolean reduceOnly);
 
 
 
@@ -321,7 +322,7 @@ public interface SyncRequestClient {
      * @param chainId      chainId
      * @return withdrawal result
      */
-    WithdrawalResult createFastWithdrawalOrder(BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId);
+    WithdrawalResult createFastWithdrawalOrder(ApexSupportedMarket market,BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId);
 
     /**
      * POST Cross-Chain Withdrawals
@@ -337,7 +338,7 @@ public interface SyncRequestClient {
      * @param chainId      chainId
      * @return withdrawal result
      */
-    WithdrawalResult createCrossChainWithdrawalOrder(BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId);
+    WithdrawalResult createCrossChainWithdrawalOrder(ApexSupportedMarket market, BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId);
 
     /**
      * Returns calculated withdrawal fee for Fast & Cross-Chain withdrawal & total available fund pool amount to withdraw;

@@ -38,7 +38,7 @@ public class CreateFastWithdrawalOrder {
 
         String signature = L2OrderSigner.signFastWithdraw(ApexSupportedMarket.BTC_USDT,l2KeyPair, apiCredential.getAccountId(), amount,
                 clientId, expireTimeInHour, currency, address, fee, chainId);
-        WithdrawalResult result = syncRequestClient.createFastWithdrawalOrder(amount, clientId, expireTime, currency, signature, address, fee, chainId);
+        WithdrawalResult result = syncRequestClient.createFastWithdrawalOrder(ApexSupportedMarket.BSC_USDC,amount, clientId, expireTime, currency, signature, address, fee, chainId);
         System.out.println(result);
     }
 }

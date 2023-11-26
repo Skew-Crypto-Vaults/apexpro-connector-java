@@ -1,10 +1,9 @@
 package exchange.apexpro.connector.impl;
 
 
+import com.google.gson.Gson;
 import exchange.apexpro.connector.ApexProCredentials;
 import exchange.apexpro.connector.RequestOptions;
-import exchange.apexpro.connector.config.ApexConfig;
-import exchange.apexpro.connector.constant.ApexConstant;
 import exchange.apexpro.connector.constant.ApiConstants;
 import exchange.apexpro.connector.enums.ApexSupportedMarket;
 import exchange.apexpro.connector.exception.ApexProApiException;
@@ -32,6 +31,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static exchange.apexpro.connector.constant.ApiConstants.URL_SUFFIX;
 import static exchange.apexpro.connector.exception.ApexProApiException.EXEC_ERROR;
@@ -42,11 +42,8 @@ class RestApiRequestImpl {
     private ApiCredential apiCredential;
     private L2KeyPair l2KeyPair;
     private String serverUrl;
-    private ApexConfig config;
 
     RestApiRequestImpl(ApexProCredentials apexProCredentials, RequestOptions options) {
-        config = new ApexConfig();
-
         if (apexProCredentials != null) {
             this.apiCredential = apexProCredentials.apiCredential;
             this.l2KeyPair = apexProCredentials.l2KeyPair;
@@ -123,12 +120,13 @@ class RestApiRequestImpl {
     }
 
 
-    RestApiRequest<ApiCredential> onboard(String ethAddress, String onboardingSignature, String l2PublicKey, String l2KeyYCoordinate) {
+    RestApiRequest<ApiCredential> onboard(String token, String ethAddress, String onboardingSignature, String l2PublicKey,
+                                          String l2KeyYCoordinate) {
         RestApiRequest<ApiCredential> request = new RestApiRequest<>();
         RequestParamsBuilder builder =
                 RequestParamsBuilder.build().putToPost("ethereumAddress", ethAddress).putToPost("starkKey", l2PublicKey)
                                     .putToPost("starkKeyYCoordinate", l2KeyYCoordinate).putToPost("walletName", "java-sdk")
-                                    .putToPost("platform", "api")
+                                    .putToPost("platform", "api").putToPost("token", token)
 
                                     .putToHeader("apex-ethereum-address", ethAddress).putToHeader("apex-signature", onboardingSignature);
 
@@ -255,20 +253,17 @@ class RestApiRequestImpl {
     }
 
 
-    public RestApiRequest<Balance> getBalance() {
-        RestApiRequest<Balance> request = new RestApiRequest<>();
+    public RestApiRequest<ApexBalance> getBalance() {
+        RestApiRequest<ApexBalance> request = new RestApiRequest<>();
         RequestParamsBuilder builder = RequestParamsBuilder.build();
         request.request = createRequest(serverUrl, "/v2/account-balance", builder);
         request.jsonParser = (jsonWrapper -> {
             JsonWrapper data = jsonWrapper.getJsonObject("data");
-            Balance balance = new Balance();
-
-            balance.setAvailable(new BigDecimal(data.getString("availableBalance")));
-            balance.setTotalEquity(new BigDecimal(data.getString("totalEquityValue")));
-            balance.setTotalInitialMargin(new BigDecimal(data.getString("initialMargin")));
-            balance.setTotalMaintenanceMargin(new BigDecimal(data.getString("maintenanceMargin")));
-            balance.setUpdatedTime(Calendar.getInstance().getTimeInMillis());
-            return balance;
+            Set<String> tokens = data.getJson().keySet();
+            return ApexBalance.builder().balances((tokens.stream().collect(Collectors.toMap(token -> token.substring(0,token.indexOf("Balance")), token -> {
+                Gson gson = new Gson();
+                return gson.fromJson(data.getJsonObject(token).getJson().toJSONString(), Balance.class);
+            })))).build();
         });
         return request;
     }
@@ -385,7 +380,8 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<Order> createOrderWithTPSL(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price,
+    public RestApiRequest<Order> createOrderWithTPSL(ApexSupportedMarket marketContext ,String symbol, OrderSide side, OrderType type,
+                                                     BigDecimal size, BigDecimal price,
                                                      BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId,
                                                      boolean reduceOnly, OrderParams takeProfitOrder, OrderParams stopLossOrder)
     {
@@ -396,7 +392,7 @@ class RestApiRequestImpl {
                 maxFeeRate.multiply(size).multiply(price).setScale(Math.max(0, maxFeeRate.stripTrailingZeros().scale()), RoundingMode.UP);
         long expireTime = System.currentTimeMillis() + 18 * 24 * 60 * 60 * 1000;
         try {
-            signature = L2OrderSigner.signOrder(ApexSupportedMarket.valueOf(config.getProperty(ApexConstant.ENABLED_MARKET)), l2KeyPair,
+            signature = L2OrderSigner.signOrder(marketContext, l2KeyPair,
                     apiCredential.getAccountId(), symbol, size, price, limitFee, expireTime, clientOrderId, side);
         }
         catch (IOException e) {
@@ -423,7 +419,7 @@ class RestApiRequestImpl {
             String tpSignature;
             try {
                 tpSignature =
-                        L2OrderSigner.signOrder(ApexSupportedMarket.valueOf(config.getProperty(ApexConstant.ENABLED_MARKET)), l2KeyPair,
+                        L2OrderSigner.signOrder(marketContext, l2KeyPair,
                                 apiCredential.getAccountId(), symbol, takeProfitOrder.getSize(), takeProfitOrder.getPrice(), tpLimitFee,
                                 expireTime, takeProfitOrder.getClientOrderId(), takeProfitOrder.getSide());
             }
@@ -451,7 +447,7 @@ class RestApiRequestImpl {
 
             try {
                 slSignature =
-                        L2OrderSigner.signOrder(ApexSupportedMarket.valueOf(config.getProperty(ApexConstant.ENABLED_MARKET)), l2KeyPair,
+                        L2OrderSigner.signOrder(marketContext, l2KeyPair,
                                 apiCredential.getAccountId(), symbol, stopLossOrder.getSize(), stopLossOrder.getPrice(), slLimitFee,
                                 expireTime, stopLossOrder.getClientOrderId(), stopLossOrder.getSide());
             }
@@ -513,7 +509,8 @@ class RestApiRequestImpl {
     }
 
 
-    public RestApiRequest<Order> createConditionalOrder(String symbol, OrderSide side, OrderType type, BigDecimal size,
+    public RestApiRequest<Order> createConditionalOrder(ApexSupportedMarket marketContext ,String symbol, OrderSide side, OrderType type,
+                                                        BigDecimal size,
                                                         BigDecimal triggerPrice, PriceType triggerPriceType, BigDecimal orderPrice,
                                                         BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId,
                                                         boolean reduceOnly)
@@ -542,7 +539,7 @@ class RestApiRequestImpl {
         try {
             if (type == OrderType.MARKET) {
                 BigDecimal maxMarketPriceRange =
-                        ExchangeInfo.perpetualContract(ApexSupportedMarket.valueOf(config.getProperty(ApexConstant.ENABLED_MARKET)), symbol)
+                        ExchangeInfo.perpetualContract(marketContext, symbol)
                                     .getMaxMarketPriceRange();
                 if (side == OrderSide.BUY) {
                     type = currentPrice.compareTo(triggerPrice) < 0 ? OrderType.STOP_MARKET : OrderType.TAKE_PROFIT_MARKET;
@@ -563,7 +560,7 @@ class RestApiRequestImpl {
             }
 
             signature =
-                    L2OrderSigner.signOrder(ApexSupportedMarket.valueOf(config.getProperty(ApexConstant.ENABLED_MARKET)), this.l2KeyPair,
+                    L2OrderSigner.signOrder(marketContext, this.l2KeyPair,
                             apiCredential.getAccountId(), symbol, size, orderPrice, limitFee, expireTime, clientOrderId, side);
         }
         catch (IOException e) {
@@ -958,13 +955,14 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<WithdrawalResult> fastWithdraw(BigDecimal amount, String clientId, Long expiration, String currencyId,
+    public RestApiRequest<WithdrawalResult> fastWithdraw(ApexSupportedMarket marketContext,BigDecimal amount, String clientId,
+                                                         Long expiration, String currencyId,
                                                          String signature, String address, BigDecimal fee, Long chainId)
     {
 
-        String lpAccountId= String.valueOf(ExchangeInfo.global(ApexSupportedMarket.valueOf(config.getProperty(ApexConstant.ENABLED_MARKET))).getFastWithdrawAccountId());
+        String lpAccountId= String.valueOf(ExchangeInfo.global(marketContext).getFastWithdrawAccountId());
         Optional<MultiChain.Chain> chain =
-                ExchangeInfo.multiChain(ApexSupportedMarket.valueOf(config.getProperty(ApexConstant.ENABLED_MARKET))).getChains().stream()
+                ExchangeInfo.multiChain(marketContext).getChains().stream()
                             .filter(f -> f.getChainId() == chainId).findAny();
         MultiChain.MultiChainToken multiChainToken =
                 chain.get().getTokens().stream().filter(t -> t.getToken().equals(currencyId)).findAny().get();
@@ -990,13 +988,14 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<WithdrawalResult> crossChainWithdraw(BigDecimal amount, String clientId, Long expiration, String currencyId,
+    public RestApiRequest<WithdrawalResult> crossChainWithdraw(ApexSupportedMarket market,BigDecimal amount, String clientId,
+                                                               Long expiration,
+                                                               String currencyId,
                                                                String signature, String address, BigDecimal fee, Long chainId)
     {
-
-        String lpAccountId= String.valueOf(ExchangeInfo.global(ApexSupportedMarket.valueOf(config.getProperty(ApexConstant.ENABLED_MARKET))).getFastWithdrawAccountId());
+        String lpAccountId= String.valueOf(ExchangeInfo.global(market).getFastWithdrawAccountId());
         Optional<MultiChain.Chain> chain =
-                ExchangeInfo.multiChain(ApexSupportedMarket.valueOf(config.getProperty(ApexConstant.ENABLED_MARKET))).getChains().stream()
+                ExchangeInfo.multiChain(market).getChains().stream()
                             .filter(f -> f.getChainId() == chainId).findAny();
         MultiChain.MultiChainToken multiChainToken =
                 chain.get().getTokens().stream().filter(t -> t.getToken().equals(currencyId)).findAny().get();

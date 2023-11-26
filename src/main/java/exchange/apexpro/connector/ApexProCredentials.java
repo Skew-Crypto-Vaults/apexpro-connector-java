@@ -15,12 +15,13 @@ public class ApexProCredentials {
         this.web3Credentials = web3Credentials;
     }
 
-    public static ApexProCredentials create(String privateEthereumKey,int networkId) throws ApexProApiException {
+    public static ApexProCredentials create(String token,String privateEthereumKey,int networkId) throws ApexProApiException {
         ApexProCredentials apexProCredentials = new ApexProCredentials(privateEthereumKey);
         L2KeyPair l2KeyPair = Onboard.deriveL2Key(apexProCredentials.web3Credentials, networkId);
 
         apexProCredentials.l2KeyPair = l2KeyPair;
-        apexProCredentials.apiCredential = Onboard.generateApiCredential(apexProCredentials.web3Credentials, l2KeyPair.getPublicKey(), l2KeyPair.getPublicKeyYCoordinate(),networkId);
+        apexProCredentials.apiCredential = Onboard.generateApiCredential(token,apexProCredentials.web3Credentials,
+                l2KeyPair.getPublicKey(), l2KeyPair.getPublicKeyYCoordinate(),networkId);
         apexProCredentials.web3Credentials = Credentials.create(privateEthereumKey);
         return apexProCredentials;
 

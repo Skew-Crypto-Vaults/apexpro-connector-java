@@ -7,7 +7,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 
-import exchange.apexpro.connector.constant.ApexConstant;
 import exchange.apexpro.connector.enums.ApexSupportedMarket;
 import exchange.apexpro.connector.impl.utils.cryptohash.Keccak256;
 import exchange.apexpro.connector.impl.utils.ecdsa.*;

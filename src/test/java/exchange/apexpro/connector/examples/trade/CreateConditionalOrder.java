@@ -2,6 +2,7 @@ package exchange.apexpro.connector.examples.trade;
 
 import exchange.apexpro.connector.ApexProCredentials;
 import exchange.apexpro.connector.SyncRequestClient;
+import exchange.apexpro.connector.enums.ApexSupportedMarket;
 import exchange.apexpro.connector.examples.config.PrivateConfig;
 import exchange.apexpro.connector.impl.L2OrderSigner;
 import exchange.apexpro.connector.model.enums.OrderSide;
@@ -39,7 +40,7 @@ public class CreateConditionalOrder {
         ApexProCredentials apexProCredentials = PrivateConfig.loadConfig().getApexProCredentials(); //Load the credentials
         SyncRequestClient syncRequestClient = SyncRequestClient.create(apexProCredentials);
 
-        Order order = syncRequestClient.createConditionalOrder(
+        Order order = syncRequestClient.createConditionalOrder(ApexSupportedMarket.BSC_USDC,
                 symbol,
                 OrderSide.BUY,
                 OrderType.LIMIT,
