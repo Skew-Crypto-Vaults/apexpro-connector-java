@@ -23,7 +23,7 @@ import java.util.UUID;
 public class CreateOrder {
     public static void main(String[] args) throws IOException {
         //Initialize the exchange configuration information. This is optional because it will be loaded automatically when you call its internal member variables.
-        ExchangeInfo.load();
+        ExchangeInfo.load(null);
 
         //Prepare an order;
         String symbol = "BTC-USDC";

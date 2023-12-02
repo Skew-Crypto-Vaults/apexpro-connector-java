@@ -18,7 +18,7 @@ import static exchange.apexpro.connector.constant.ApiConstants.ORDER_SIGNATURE_E
 
 public class CreateWithdrawalOrder {
     public static void main(String[] args) {
-        ExchangeInfo.load();
+        ExchangeInfo.load(null);
 
         ApexProCredentials apexProCredentials = PrivateConfig.loadConfig().getApexProCredentials(); //Load the credentials
 

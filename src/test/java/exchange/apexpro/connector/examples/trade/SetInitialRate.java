@@ -23,7 +23,7 @@ public class SetInitialRate {
 
         public static void main(String[] args) throws IOException {
             //Initialize the exchange configuration information. This is optional because it will be loaded automatically when you call its internal member variables.
-            ExchangeInfo.load();
+            ExchangeInfo.load(null);
             BigDecimal initalMargin = new BigDecimal("0.1");
             //Send order to ApeXPro
             ApexProCredentials apexProCredentials = PrivateConfig.loadConfig().getApexProCredentials(); //Load the credentials

@@ -9,7 +9,7 @@ public class LoadExchangeInfo {
 
 
     public static void main(String[] args) {
-        ExchangeInfo.load();
+        ExchangeInfo.load(null);
         log.info("ExchangeInfo.global:{} ",ExchangeInfo.global(ApexSupportedMarket.BTC_USDT));
         log.info("ExchangeInfo.currencies: {}",ExchangeInfo.currencyMap(ApexSupportedMarket.BTC_USDT));
         log.info("ExchangeInfo.perpetualContracts: {}", ExchangeInfo.perpetualContractMap(ApexSupportedMarket.BSC_USDC));

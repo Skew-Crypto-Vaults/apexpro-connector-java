@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 public class GetWithdrawFee {
 
     public static void main(String[] args) {
-        ExchangeInfo.load();
+        ExchangeInfo.load(null);
         ApexProCredentials apexProCredentials = PrivateConfig.loadConfig().getApexProCredentials(); //Load the credentials
         SyncRequestClient syncRequestClient = SyncRequestClient.create(apexProCredentials);
 

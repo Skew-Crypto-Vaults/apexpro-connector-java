@@ -31,9 +31,9 @@ public class ExchangeInfo {
 
     private static boolean isLoaded = false;
 
-    public static void load() {
+    public static void load(RequestOptions options) {
         if (!isLoaded) {
-            RequestOptions options = new RequestOptions();
+            options=  options!=null? options: new RequestOptions();
             SyncRequestClient syncRequestClient = SyncRequestClient.create(options);
             String exchangeInfoJson = syncRequestClient.getExchangeInfo();
             loadData(exchangeInfoJson);
@@ -165,14 +165,14 @@ public class ExchangeInfo {
 
     public static Global global(ApexSupportedMarket market) {
         if (!isLoaded) {
-            load();
+            load(null);
         }
         return HOLDER_REF.get().global.get(market);
     }
 
     public static MultiChain multiChain(ApexSupportedMarket market) {
         if (!isLoaded) {
-            load();
+            load(null);
         }
 
         return HOLDER_REF.get().multiChain.get(market);
@@ -180,7 +180,7 @@ public class ExchangeInfo {
 
     public static Currency currency(ApexSupportedMarket market, String currencyId) {
         if (!isLoaded) {
-            load();
+            load(null);
         }
 
         Currency currency = HOLDER_REF.get().currencyMap.get(market).get(currencyId);
@@ -192,7 +192,7 @@ public class ExchangeInfo {
 
     public static ImmutableMap<String, Currency> currencyMap(ApexSupportedMarket market) {
         if (!isLoaded) {
-            load();
+            load(null);
         }
 
         return HOLDER_REF.get().currencyMap.get(market);
@@ -200,7 +200,7 @@ public class ExchangeInfo {
 
     public static PerpetualContract perpetualContract(ApexSupportedMarket market, String symbol) {
         if (!isLoaded) {
-            load();
+            load(null);
         }
 
         PerpetualContract perpetualContract = HOLDER_REF.get().perpetualContractMap.get(market).get(symbol);
@@ -212,7 +212,7 @@ public class ExchangeInfo {
 
     public static ImmutableMap<String, PerpetualContract> perpetualContractMap(ApexSupportedMarket market) {
         if (!isLoaded) {
-            load();
+            load(null);
         }
 
         return HOLDER_REF.get().perpetualContractMap.get(market);
@@ -220,7 +220,7 @@ public class ExchangeInfo {
 
     public static ImmutableMap<Integer, PerpetualContract> crossSymbolIdToPerpetualContractMap(ApexSupportedMarket market) {
         if (!isLoaded) {
-            load();
+            load(null);
         }
 
         return HOLDER_REF.get().crossSymbolIdToPerpetualContractMap.get(market);
