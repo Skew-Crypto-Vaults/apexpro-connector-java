@@ -65,8 +65,8 @@ public class SyncRequestImpl implements SyncRequestClient {
     }
 
     @Override
-    public OrderFills getFills(String symbol, Long beginTimeInclusive, Long endTimeExclusive, Integer page, Integer limit) {
-        return RestApiInvoker.callSync(requestImpl.getFills( symbol, beginTimeInclusive,  endTimeExclusive,  page,  limit));
+    public OrderFills getFills(String token,String symbol, Long beginTimeInclusive, Long endTimeExclusive, Integer page, Integer limit) {
+        return RestApiInvoker.callSync(requestImpl.getFills(token, symbol, beginTimeInclusive,  endTimeExclusive,  page,  limit));
     }
 
     @Override
@@ -129,8 +129,8 @@ public class SyncRequestImpl implements SyncRequestClient {
     }
 
     @Override
-    public WithdrawalList getWithdrawList(Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive) {
-        return RestApiInvoker.callSync(requestImpl.getWithdrawList(limit, page, beginTimeInclusive, endTimeExclusive));
+    public WithdrawalList getWithdrawList(String currencyId,Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive) {
+        return RestApiInvoker.callSync(requestImpl.getWithdrawList(currencyId,limit, page, beginTimeInclusive, endTimeExclusive));
     }
 
     @Override
@@ -161,8 +161,9 @@ public class SyncRequestImpl implements SyncRequestClient {
     }
 
 
-    public FundingRates getFundingRate(String symbol, Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive, PositionSide positionSide) {
-        return RestApiInvoker.callSync(requestImpl.getFundingRate( symbol,  limit,  page,  beginTimeInclusive,  endTimeExclusive,  positionSide));
+    public FundingRates getFundingRate(String token,String symbol, Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive, PositionSide positionSide) {
+        return RestApiInvoker.callSync(requestImpl.getFundingRate( token,symbol,  limit,  page,  beginTimeInclusive,  endTimeExclusive,
+                positionSide));
     }
 
     public Ticker getTicker(String symbol) {

@@ -128,6 +128,7 @@ public interface SyncRequestClient {
      * GET Trade History
      * GET /v1/fills
      *
+     *@ param token              Token
      * @param symbol             Symbol
      * @param limit              default at 100
      * @param beginTimeInclusive Start time
@@ -135,7 +136,7 @@ public interface SyncRequestClient {
      * @param page               Page numbers start from 0
      * @return order fills
      */
-    OrderFills getFills(String symbol, Long beginTimeInclusive, Long endTimeExclusive, Integer page, Integer limit);
+    OrderFills getFills(String token,String symbol, Long beginTimeInclusive, Long endTimeExclusive, Integer page, Integer limit);
 
 
     /**
@@ -291,7 +292,7 @@ public interface SyncRequestClient {
      * @param endTimeExclusive   End time;
      * @return wallet records
      */
-    WithdrawalList getWithdrawList(Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive);
+    WithdrawalList getWithdrawList(String currencyId,Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive);
 
     /**
      * POST User Withdrawal
@@ -371,7 +372,8 @@ public interface SyncRequestClient {
      * @param positionSide position side ,if null both wil be returned
      * @return
      */
-    FundingRates getFundingRate(String symbol, Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive, PositionSide positionSide);
+    FundingRates getFundingRate(String token,String symbol, Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive,
+                                PositionSide positionSide);
 
 
     /**

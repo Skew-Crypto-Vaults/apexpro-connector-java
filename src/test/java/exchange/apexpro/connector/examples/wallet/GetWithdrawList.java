@@ -12,7 +12,7 @@ public class GetWithdrawList {
         ApexProCredentials apexProCredentials = PrivateConfig.loadConfig().getApexProCredentials(); //Load the credentials
         SyncRequestClient syncRequestClient = SyncRequestClient.create(apexProCredentials);
 
-        WithdrawalList result = syncRequestClient.getWithdrawList(100, 0l, null, null);
+        WithdrawalList result = syncRequestClient.getWithdrawList("USDC",100, 0l, null, null);
         System.out.println("Withdrawal list:"+result);
     }
 }

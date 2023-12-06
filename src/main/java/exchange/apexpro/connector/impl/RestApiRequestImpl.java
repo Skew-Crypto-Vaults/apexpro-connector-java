@@ -302,9 +302,9 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<OrderFills> getFills(String symbol, Long beginTimeInclusive, Long endTimeExclusive, Integer page, Integer limit) {
+    public RestApiRequest<OrderFills> getFills(String token,String symbol, Long beginTimeInclusive, Long endTimeExclusive, Integer page, Integer limit) {
         RestApiRequest<OrderFills> request = new RestApiRequest<>();
-        RequestParamsBuilder builder = RequestParamsBuilder.build().putToUrl("symbol", symbol).putToUrl("page", String.valueOf(page))
+        RequestParamsBuilder builder = RequestParamsBuilder.build().putToUrl("token", token).putToUrl("symbol", symbol).putToUrl("page", String.valueOf(page))
                                                            .putToUrl("limit", String.valueOf(limit)).putToUrl("beginTimeInclusive",
                         beginTimeInclusive != null ? String.valueOf(beginTimeInclusive) : "").putToUrl("endTimeExclusive",
                         endTimeExclusive != null ? String.valueOf(endTimeExclusive) : "");
@@ -868,10 +868,11 @@ class RestApiRequestImpl {
         return request;
     }
 
-    public RestApiRequest<WithdrawalList> getWithdrawList(Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive) {
+    public RestApiRequest<WithdrawalList> getWithdrawList(String currencyId, Integer limit, Long page, Long beginTimeInclusive,
+                                                          Long endTimeExclusive) {
         RestApiRequest<WithdrawalList> request = new RestApiRequest<>();
         RequestParamsBuilder builder =
-                RequestParamsBuilder.build().putToUrl("limit", String.valueOf(limit)).putToUrl("page", String.valueOf(page))
+                RequestParamsBuilder.build().putToUrl("currencyId", currencyId).putToUrl("limit", String.valueOf(limit)).putToUrl("page", String.valueOf(page))
                                     .putToUrl("beginTimeInclusive", beginTimeInclusive != null ? String.valueOf(beginTimeInclusive) : "")
                                     .putToUrl("endTimeExclusive", endTimeExclusive != null ? String.valueOf(endTimeExclusive) : "")
                                     .putToUrl("transferType", "WITHDRAW,FAST_WITHDRAW,CROSS_WITHDRAW");
@@ -1023,16 +1024,18 @@ class RestApiRequestImpl {
     }
 
 
-    public RestApiRequest<FundingRates> getFundingRate(String symbol, Integer limit, Long page, Long beginTimeInclusive,
+    public RestApiRequest<FundingRates> getFundingRate(String token, String symbol, Integer limit, Long page, Long beginTimeInclusive,
                                                        Long endTimeExclusive, PositionSide positionSide)
     {
         RestApiRequest<FundingRates> request = new RestApiRequest<>();
-        RequestParamsBuilder builder =
-                RequestParamsBuilder.build().putToUrl("symbol", symbol).putToUrl("limit", limit != null ? String.valueOf(limit) : "")
-                                    .putToUrl("page", page != null ? String.valueOf(page) : "")
-                                    .putToUrl("beginTimeInclusive", beginTimeInclusive != null ? String.valueOf(beginTimeInclusive) : "")
-                                    .putToUrl("endTimeExclusive", endTimeExclusive != null ? String.valueOf(endTimeExclusive) : "")
-                                    .putToUrl("positionSide", positionSide != null ? positionSide.name() : "");
+        RequestParamsBuilder builder = RequestParamsBuilder.build().putToUrl("token", token).putToUrl("symbol", symbol)
+                                                           .putToUrl("limit", limit != null ? String.valueOf(limit) : "")
+                                                           .putToUrl("page", page != null ? String.valueOf(page) : "")
+                                                           .putToUrl("beginTimeInclusive",
+                                                                   beginTimeInclusive != null ? String.valueOf(beginTimeInclusive) : "")
+                                                           .putToUrl("endTimeExclusive",
+                                                                   endTimeExclusive != null ? String.valueOf(endTimeExclusive) : "")
+                                                           .putToUrl("positionSide", positionSide != null ? positionSide.name() : "");
 
         request.request = createRequest(serverUrl, "/v2/funding", builder);
         request.jsonParser = (jsonWrapper -> {
