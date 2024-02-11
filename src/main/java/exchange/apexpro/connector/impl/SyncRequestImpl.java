@@ -1,7 +1,6 @@
 package exchange.apexpro.connector.impl;
 
 import exchange.apexpro.connector.SyncRequestClient;
-import exchange.apexpro.connector.enums.ApexSupportedMarket;
 import exchange.apexpro.connector.model.account.*;
 import exchange.apexpro.connector.model.enums.*;
 import exchange.apexpro.connector.model.market.OrderBookPrice;
@@ -14,6 +13,9 @@ import exchange.apexpro.connector.model.user.ApiCredential;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+
+import static exchange.apexpro.connector.constant.ApiConstants.CONTRACT_ZONE_USDC;
+import static exchange.apexpro.connector.constant.ApiConstants.CONTRACT_ZONE_USDT;
 
 public class SyncRequestImpl implements SyncRequestClient {
 
@@ -34,18 +36,20 @@ public class SyncRequestImpl implements SyncRequestClient {
     }
 
     @Override
-    public ApiCredential onboard(String token,String ethAddress, String onboardingSignature, String l2PublicKey, String l2KeyYCoordinate) {
-        return RestApiInvoker.callSync(requestImpl.onboard(token,ethAddress, onboardingSignature, l2PublicKey, l2KeyYCoordinate));
+    public ApiCredential onboard(String ethAddress, String onboardingSignature, String l2PublicKey, String l2KeyYCoordinate) {
+        //by default, will register for both contract areas USDC &USDT
+        RestApiInvoker.callSync(requestImpl.onboard(ethAddress, onboardingSignature, l2PublicKey, l2KeyYCoordinate, CONTRACT_ZONE_USDC));
+        return RestApiInvoker.callSync(requestImpl.onboard(ethAddress, onboardingSignature, l2PublicKey, l2KeyYCoordinate, CONTRACT_ZONE_USDT));
     }
 
 
     @Override
-    public AccountDetails getAccount() {
+    public Account getAccount() {
         return RestApiInvoker.callSync(requestImpl.getAccount());
     }
 
     @Override
-    public ApexBalance getBalance() {
+    public List<Balance> getBalance() {
         return RestApiInvoker.callSync(requestImpl.getBalance());
     }
 
@@ -55,8 +59,8 @@ public class SyncRequestImpl implements SyncRequestClient {
     }
 
     @Override
-    public YesterdayPnl getYesterdayPnl() {
-        return RestApiInvoker.callSync(requestImpl.getYesterdayPnl());
+    public YesterdayPnl getYesterdayPnl(String contractZone) {
+        return RestApiInvoker.callSync(requestImpl.getYesterdayPnl(contractZone));
     }
 
     @Override
@@ -65,26 +69,23 @@ public class SyncRequestImpl implements SyncRequestClient {
     }
 
     @Override
-    public OrderFills getFills(String token,String symbol, Long beginTimeInclusive, Long endTimeExclusive, Integer page, Integer limit) {
-        return RestApiInvoker.callSync(requestImpl.getFills(token, symbol, beginTimeInclusive,  endTimeExclusive,  page,  limit));
+    public OrderFills getFills(String symbol, Long beginTimeInclusive, Long endTimeExclusive, Integer page, Integer limit) {
+        return RestApiInvoker.callSync(requestImpl.getFills( symbol, beginTimeInclusive,  endTimeExclusive,  page,  limit));
     }
 
     @Override
-    public Order createOrder(ApexSupportedMarket market,String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId, boolean reduceOnly) {
-        return RestApiInvoker.callSync(requestImpl.createOrderWithTPSL(market,symbol, side, type, size, price, maxFeeRate, timeInForce,
-                clientOrderId, reduceOnly,null,null));
+    public Order createOrder(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId, boolean reduceOnly) {
+        return RestApiInvoker.callSync(requestImpl.createOrderWithTPSL(symbol, side, type, size, price, maxFeeRate, timeInForce, clientOrderId, reduceOnly,null,null));
     }
 
     @Override
-    public Order createOrderWithTPSL(ApexSupportedMarket market,String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId, boolean reduceOnly,OrderParams withTakeProfit, OrderParams withStopLoss) {
-        return RestApiInvoker.callSync(requestImpl.createOrderWithTPSL(market,symbol, side, type, size, price, maxFeeRate, timeInForce,
-                clientOrderId, reduceOnly,withTakeProfit,withStopLoss));
+    public Order createOrderWithTPSL(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId, boolean reduceOnly,OrderParams withTakeProfit, OrderParams withStopLoss) {
+        return RestApiInvoker.callSync(requestImpl.createOrderWithTPSL(symbol, side, type, size, price, maxFeeRate, timeInForce, clientOrderId, reduceOnly,withTakeProfit,withStopLoss));
     }
 
     @Override
-    public Order createConditionalOrder(ApexSupportedMarket market,String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal triggerPrice,PriceType triggerPriceType, BigDecimal orderPrice, BigDecimal maxFeeRate,TimeInForce timeInForce, String clientOrderId, boolean reduceOnly) {
-        return RestApiInvoker.callSync(requestImpl.createConditionalOrder(market,symbol, side, type, size, triggerPrice, triggerPriceType
-                ,orderPrice, maxFeeRate, timeInForce, clientOrderId, reduceOnly));
+    public Order createConditionalOrder(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal triggerPrice,PriceType triggerPriceType, BigDecimal orderPrice, BigDecimal maxFeeRate,TimeInForce timeInForce, String clientOrderId, boolean reduceOnly) {
+        return RestApiInvoker.callSync(requestImpl.createConditionalOrder(symbol, side, type, size, triggerPrice, triggerPriceType,orderPrice, maxFeeRate, timeInForce, clientOrderId, reduceOnly));
     }
 
 
@@ -99,13 +100,13 @@ public class SyncRequestImpl implements SyncRequestClient {
     }
 
     @Override
-    public OpenOrders getOpenOrders() {
-        return RestApiInvoker.callSync(requestImpl.getOpenOrders());
+    public OpenOrders getOpenOrders(String contractZone) {
+        return RestApiInvoker.callSync(requestImpl.getOpenOrders(contractZone));
     }
 
     @Override
-    public Map<String, String> cancelAllOpenOrders(String symbol) {
-        return RestApiInvoker.callSync(requestImpl.cancelAllOpenOrders(symbol));
+    public Map<String, String> cancelAllOpenOrders(String symbol,String contractZone) {
+        return RestApiInvoker.callSync(requestImpl.cancelAllOpenOrders(symbol,contractZone));
     }
 
     @Override
@@ -119,8 +120,8 @@ public class SyncRequestImpl implements SyncRequestClient {
     }
 
     @Override
-    public Order getOrderByClientOrderId(String id) {
-        return RestApiInvoker.callSync(requestImpl.getOrderByClientOrderId(id));
+    public Order getOrderByClientOrderId(String id,String contractZone) {
+        return RestApiInvoker.callSync(requestImpl.getOrderByClientOrderId(id,contractZone));
     }
 
     @Override
@@ -139,21 +140,19 @@ public class SyncRequestImpl implements SyncRequestClient {
     }
 
     @Override
-    public WithdrawalResult createFastWithdrawalOrder(ApexSupportedMarket market,BigDecimal amount, String clientId, Long expiration,
-                                                      String currencyId, String signature, String address, BigDecimal fee, Long chainId) {
-        return RestApiInvoker.callSync(requestImpl.fastWithdraw(market,amount, clientId, expiration, currencyId, signature, address, fee,
-                chainId));
+    public WithdrawalResult createFastWithdrawalOrder(BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId) {
+
+        return RestApiInvoker.callSync(requestImpl.fastWithdraw(amount, clientId, expiration, currencyId, signature, address, fee, chainId, String.valueOf(ExchangeInfo.global(ExchangeInfo.getContractZone(currencyId)).getFastWithdrawAccountId())));
     }
 
     @Override
-    public WithdrawalResult createCrossChainWithdrawalOrder(ApexSupportedMarket market,BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId) {
-        return RestApiInvoker.callSync(requestImpl.crossChainWithdraw(market,amount, clientId, expiration, currencyId, signature, address
-                , fee, chainId));
+    public WithdrawalResult createCrossChainWithdrawalOrder(BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId) {
+        return RestApiInvoker.callSync(requestImpl.crossChainWithdraw(amount, clientId, expiration, currencyId, signature, address, fee, chainId,String.valueOf(ExchangeInfo.global(ExchangeInfo.getContractZone(currencyId)).getCrossChainAccountId())));
     }
 
     @Override
-    public WithdrawalFee getWithdrawalFee(BigDecimal amount, long chainId) {
-        return RestApiInvoker.callSync(requestImpl.getWithdrawalFee(amount, chainId));
+    public WithdrawalFee getWithdrawalFee(String collateralToken,BigDecimal amount, long chainId) {
+        return RestApiInvoker.callSync(requestImpl.getWithdrawalFee(collateralToken,amount, chainId));
     }
 
     public OrderBookPrice getWorstPrice(String symbol, BigDecimal size, OrderSide side) {
@@ -161,9 +160,8 @@ public class SyncRequestImpl implements SyncRequestClient {
     }
 
 
-    public FundingRates getFundingRate(String token,String symbol, Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive, PositionSide positionSide) {
-        return RestApiInvoker.callSync(requestImpl.getFundingRate( token,symbol,  limit,  page,  beginTimeInclusive,  endTimeExclusive,
-                positionSide));
+    public FundingRates getFundingRate(String symbol, Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive, PositionSide positionSide) {
+        return RestApiInvoker.callSync(requestImpl.getFundingRate( symbol,  limit,  page,  beginTimeInclusive,  endTimeExclusive,  positionSide));
     }
 
     public Ticker getTicker(String symbol) {
@@ -174,5 +172,4 @@ public class SyncRequestImpl implements SyncRequestClient {
     public void setInitialMarginRate(String symbol, BigDecimal initialMarginRate) {
         RestApiInvoker.callSync(requestImpl.setInitialMarginRate(symbol,initialMarginRate));
     }
-
 }

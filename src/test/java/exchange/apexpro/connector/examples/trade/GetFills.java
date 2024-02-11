@@ -14,7 +14,7 @@ public class GetFills {
         SyncRequestClient syncRequestClient = SyncRequestClient.create(apexProCredentials);
         long endTime = System.currentTimeMillis();
         long startTime = DateUtils.addDays(new Date(), -60).getTime();
-        OrderFills result = syncRequestClient.getFills("USDC","BTC-USDC",  startTime, endTime, 0,100);
+        OrderFills result = syncRequestClient.getFills(null,  startTime, endTime, 0,100);
         System.out.println("Order fills:" +result);
     }
 }

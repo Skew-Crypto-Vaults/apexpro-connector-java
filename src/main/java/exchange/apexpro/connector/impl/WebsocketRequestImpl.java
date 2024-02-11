@@ -329,15 +329,16 @@ class WebsocketRequestImpl {
                 jsonOrders.forEach(item -> {
                     Order order = new Order();
 
+                    order.setOrderId(item.getString("id"));
                     order.setAccountId(item.getString("accountId"));
-                    order.setClientOrderId(item.getString("clientOrderId"));
-                    order.setCreatedTime(item.getLong("createdAt"));
+                    order.setClientOrderId(item.getString("clientId"));
+
                     order.setCumSuccessFillFee(new BigDecimal(item.getString("cumSuccessFillFee")));
                     order.setCumSuccessFillSize(new BigDecimal(item.getString("cumSuccessFillSize")));
                     order.setCumSuccessFillValue(new BigDecimal(item.getString("cumSuccessFillValue")));
                     order.setCumSuccessLiquidateFee(new BigDecimal(item.getString("cumSuccessLiquidateFee")));
                     order.setExpiresTime(item.getLong("expiresAt"));
-                    order.setOrderId(item.getString("orderId"));
+
                     order.setIsDeleverage(item.getBoolean("isDeleverage"));
                     order.setIsLiquidate(item.getBoolean("isLiquidate"));
                     order.setIsPositionTpsl(item.getBoolean("isPositionTpsl"));
@@ -352,7 +353,8 @@ class WebsocketRequestImpl {
                     order.setTriggerPrice(new BigDecimal(item.getString("triggerPrice")));
                     order.setTriggerPriceType(item.getString("triggerPriceType"));
                     order.setType(item.getString("type"));
-                    order.setUnfillableAt(item.getLong("unfillableAt"));
+
+                    order.setCreatedTime(item.getLong("createdAt"));
                     order.setUpdatedTime(item.getLong("updatedAt"));
                     orders.add(order);
 
@@ -365,7 +367,6 @@ class WebsocketRequestImpl {
                 jsonOrderFills.forEach(item -> {
                     OrderFill orderFill = new OrderFill();
                     orderFill.setId(item.getString("id"));
-                    orderFill.setAccountId(item.getString("accountId"));
                     orderFill.setClientOrderId(item.getString("clientOrderId"));
                     orderFill.setCreatedTime(item.getLong("createdAt"));
                     orderFill.setDirection(item.getString("direction"));
@@ -392,15 +393,14 @@ class WebsocketRequestImpl {
                 JsonWrapperArray jsonPositions =  jsonWrapper.getJsonArray("positions");
                 List<Position> positions = new ArrayList<>();
                 jsonPositions.forEach(item -> {
-                    Position position = Position.builder().build();
+                    Position position = new Position();
                     position.setAccountId(item.getString("accountId"));
                     position.setClosedTime(item.getLong("closedAt"));
                     position.setCustomInitialMarginRate(new BigDecimal(item.getString("customInitialMarginRate")));
                     position.setEntryPrice(new BigDecimal(item.getString("entryPrice")));
                     position.setExitPrice(new BigDecimal(item.getString("exitPrice")));
                     position.setMaxSize(new BigDecimal(item.getString("maxSize")));
-                    position.setNetFunding(new BigDecimal(item.getString("netFunding")));
-
+                    position.setFundingFee(new BigDecimal(item.getString("fundingFee")));
                     position.setSide(item.getString("side"));
                     position.setSize(new BigDecimal(item.getString("size")));
                     position.setSumClose(new BigDecimal(item.getString("sumClose")));
@@ -416,13 +416,13 @@ class WebsocketRequestImpl {
                 JsonWrapperArray jsonWallets =  jsonWrapper.getJsonArray("wallets");
                 List<Wallet> wallets = new ArrayList<>();
                 jsonWallets.forEach(item -> {
-                    Wallet wallet =  Wallet.builder().build();
-                    wallet.setAsset(item.getString("asset"));
-                    wallet.setBalance(new BigDecimal(item.getString("balance")));
-                    wallet.setPendingDepositAmount(new BigDecimal(item.getString("pendingDepositAmount")));
-                    wallet.setPendingTransferInAmount(new BigDecimal(item.getString("pendingTransferInAmount")));
-                    wallet.setPendingWithdrawAmount(new BigDecimal(item.getString("pendingWithdrawAmount")));
-                    wallet.setPendingTransferOutAmount(new BigDecimal(item.getString("pendingTransferOutAmount")));
+                    Wallet wallet = new Wallet();
+                    wallet.setToken(item.getString("token"));
+                    wallet.setBalance(item.getString("balance"));
+                    wallet.setPendingDepositAmount(item.getString("pendingDepositAmount"));
+                    wallet.setPendingTransferInAmount(item.getString("pendingTransferInAmount"));
+                    wallet.setPendingWithdrawAmount(item.getString("pendingWithdrawAmount"));
+                    wallet.setPendingTransferOutAmount(item.getString("pendingTransferOutAmount"));
                     wallets.add(wallet);
                 });
                 result.setWallets(wallets);

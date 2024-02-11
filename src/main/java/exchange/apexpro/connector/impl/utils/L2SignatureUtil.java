@@ -7,7 +7,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 
-import exchange.apexpro.connector.enums.ApexSupportedMarket;
 import exchange.apexpro.connector.impl.utils.cryptohash.Keccak256;
 import exchange.apexpro.connector.impl.utils.ecdsa.*;
 import exchange.apexpro.connector.model.meta.Currency;
@@ -243,10 +242,8 @@ public class L2SignatureUtil {
         return signedDataInt;
     }
 
-    public static byte[] calcFastWithdrawFact(ApexSupportedMarket enabledMarket,String currencyId,String ethAddress, String erc20Address,
-                                              BigDecimal amount,
-                                              String salt){
-        Currency currency = ExchangeInfo.currency(enabledMarket,currencyId);
+    public static byte[] calcFastWithdrawFact(String currencyId,String ethAddress, String erc20Address, BigDecimal amount, String salt){
+        Currency currency = ExchangeInfo.currency(currencyId,ExchangeInfo.getContractZone(currencyId));
         BigInteger saltBigInteger=new BigInteger(salt);
         Keccak256 keccak256=new Keccak256();
         keccak256.update(hexStringToBytes(ethAddress));

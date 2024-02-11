@@ -13,7 +13,7 @@ public class GetAccount {
     public static void main(String[] args) {
         ApexProCredentials apexProCredentials = PrivateConfig.loadConfig().getApexProCredentials(); //Load the credentials
         SyncRequestClient syncRequestClient = SyncRequestClient.create(apexProCredentials);
-        AccountDetails account = syncRequestClient.getAccount();
-        System.out.println("Account info: "+account);
+        Account account = syncRequestClient.getAccount();
+        System.out.println("Account info: " + account);
     }
 }

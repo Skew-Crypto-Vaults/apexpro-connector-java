@@ -24,11 +24,11 @@ import java.util.UUID;
 public class CreateConditionalOrder {
     public static void main(String[] args) throws IOException {
         //Initialize the exchange configuration information. This is optional because it will be loaded automatically when you call its internal member variables.
-        ExchangeInfo.load(null);
+        ExchangeInfo.load();
 
 
         //Prepare an order;
-        String symbol = "BTC-USDC";
+        String symbol = "BTC-USDT";
         String clientId = UUID.randomUUID().toString();
         BigDecimal size = new BigDecimal("0.002");
         PriceType triggerPriceType = PriceType.ORACLE;
@@ -40,7 +40,7 @@ public class CreateConditionalOrder {
         ApexProCredentials apexProCredentials = PrivateConfig.loadConfig().getApexProCredentials(); //Load the credentials
         SyncRequestClient syncRequestClient = SyncRequestClient.create(apexProCredentials);
 
-        Order order = syncRequestClient.createConditionalOrder(ApexSupportedMarket.BSC_USDC,
+        Order order = syncRequestClient.createConditionalOrder(
                 symbol,
                 OrderSide.BUY,
                 OrderType.LIMIT,

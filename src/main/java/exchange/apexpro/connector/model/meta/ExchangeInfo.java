@@ -7,8 +7,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import exchange.apexpro.connector.RequestOptions;
 import exchange.apexpro.connector.SyncRequestClient;
-import exchange.apexpro.connector.constant.ApiConstants;
-import exchange.apexpro.connector.enums.ApexSupportedMarket;
 import exchange.apexpro.connector.exception.ApexProApiException;
 import exchange.apexpro.connector.impl.utils.json.CostBigDecimalAdapter;
 import lombok.extern.slf4j.Slf4j;
@@ -19,225 +17,276 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
+import static exchange.apexpro.connector.constant.ApiConstants.*;
 import static exchange.apexpro.connector.exception.ApexProApiException.RUNTIME_ERROR;
 
 @Slf4j
 public class ExchangeInfo {
 
-    private static final AtomicReference<Holder> HOLDER_REF = new AtomicReference<>(
-            new Holder(ImmutableMap.<ApexSupportedMarket, Global>of(), ImmutableMap.<ApexSupportedMarket, ImmutableMap<String, Currency>>of(),
-                    ImmutableMap.<ApexSupportedMarket, ImmutableMap<String, PerpetualContract>>of(),
-                    ImmutableMap.<ApexSupportedMarket, ImmutableMap<Integer, PerpetualContract>>of(), ImmutableMap.<ApexSupportedMarket, MultiChain>of()));
+    private static final AtomicReference<Holder> HOLDER_REF_USDC = new AtomicReference<>(
+            new Holder(Global.newBuilder().build(), ImmutableMap.<String, Currency>of(), ImmutableMap.<String, PerpetualContract>of(), ImmutableMap.<Integer, PerpetualContract>of(), MultiChain.newBuilder().build()));
+
+    private static final AtomicReference<Holder> HOLDER_REF_USDT = new AtomicReference<>(
+            new Holder(Global.newBuilder().build(), ImmutableMap.<String, Currency>of(), ImmutableMap.<String, PerpetualContract>of(), ImmutableMap.<Integer, PerpetualContract>of(), MultiChain.newBuilder().build()));
 
     private static boolean isLoaded = false;
 
-    public static void load(RequestOptions options) {
+    public static void load(){
         if (!isLoaded) {
-            options=  options!=null? options: new RequestOptions();
+            RequestOptions options = new RequestOptions();
             SyncRequestClient syncRequestClient = SyncRequestClient.create(options);
-            String exchangeInfoJson = syncRequestClient.getExchangeInfo();
-            loadData(exchangeInfoJson);
+            String exchangeInfoJsonStr = syncRequestClient.getExchangeInfo();
+
+            GsonBuilder builder = new GsonBuilder();
+            builder.registerTypeAdapter(BigDecimal.class, new CostBigDecimalAdapter());
+            Gson gson = builder.create();
+
+            JsonObject exchangeInfoJson = gson.fromJson(exchangeInfoJsonStr,JsonObject.class);
+            JsonObject usdcConfig = exchangeInfoJson.getAsJsonObject("usdcConfig");
+            JsonObject usdtConfig = exchangeInfoJson.getAsJsonObject("usdtConfig");
+            loadData(usdcConfig,HOLDER_REF_USDC);
+            loadData(usdtConfig,HOLDER_REF_USDT);
+            isLoaded = true;
+        }
+    }
+    public static void load(RequestOptions options){
+        if (!isLoaded) {
+            SyncRequestClient syncRequestClient = SyncRequestClient.create(options);
+            String exchangeInfoJsonStr = syncRequestClient.getExchangeInfo();
+
+            GsonBuilder builder = new GsonBuilder();
+            builder.registerTypeAdapter(BigDecimal.class, new CostBigDecimalAdapter());
+            Gson gson = builder.create();
+
+            JsonObject exchangeInfoJson = gson.fromJson(exchangeInfoJsonStr,JsonObject.class);
+            JsonObject usdcConfig = exchangeInfoJson.getAsJsonObject("usdcConfig");
+            JsonObject usdtConfig = exchangeInfoJson.getAsJsonObject("usdtConfig");
+            loadData(usdcConfig,HOLDER_REF_USDC);
+            loadData(usdtConfig,HOLDER_REF_USDT);
             isLoaded = true;
         }
     }
 
-    private static void loadData(String exchangeInfoJsonStr) {
-        log.debug("[loadMetaData] content=", exchangeInfoJsonStr);
+    private static void loadData(JsonObject usdcConfig,AtomicReference<Holder> holderAtomicReference) {
+        log.info("[loadMetaData] content=", usdcConfig.toString());
         try {
             GsonBuilder builder = new GsonBuilder();
             builder.registerTypeAdapter(BigDecimal.class, new CostBigDecimalAdapter());
             Gson gson = builder.create();
 
-            ApexExchangeInfo apexInfo = gson.fromJson(exchangeInfoJsonStr, ApexExchangeInfo.class);
-            ImmutableMap<String, Currency> currencyMapUsdc = parseCurrency(apexInfo.getUsdcConfig().getCurrency());
-            ImmutableMap<String, Currency> currencyMapUsdt = parseCurrency(apexInfo.getUsdtConfig().getCurrency());
-            ImmutableMap<ApexSupportedMarket, ImmutableMap<String, Currency>> currencyMap =
-                    ImmutableMap.<ApexSupportedMarket, ImmutableMap<String, Currency>>builder().put(ApexSupportedMarket.BSC_USDC, currencyMapUsdc)
-                                .put(ApexSupportedMarket.BTC_USDT, currencyMapUsdt).build();
 
-            ImmutableMap<String, PerpetualContract> perpetualContractMapUsdc =
-                    parsePerpetualContract(apexInfo.getUsdcConfig().getPerpetualContract(), currencyMapUsdc);
-            ImmutableMap<String, PerpetualContract> perpetualContractMapUsdt =
-                    parsePerpetualContract(apexInfo.getUsdtConfig().getPerpetualContract(), currencyMapUsdt);
-            ImmutableMap<ApexSupportedMarket, ImmutableMap<String, PerpetualContract>> perpetualMap =
-                    ImmutableMap.<ApexSupportedMarket, ImmutableMap<String, PerpetualContract>>builder()
-                                .put(ApexSupportedMarket.BSC_USDC, perpetualContractMapUsdc)
-                                .put(ApexSupportedMarket.BTC_USDT, perpetualContractMapUsdt).build();
+            List<Currency> currencyList = gson.fromJson(usdcConfig.getAsJsonArray("currency"),new TypeToken<List<Currency>>(){}.getType());
+            ImmutableMap<String, Currency> currencyMap = parseCurrency(currencyList);
 
-            ImmutableMap<ApexSupportedMarket, MultiChain> multiChainMap = ImmutableMap.<ApexSupportedMarket, MultiChain>builder().put(ApexSupportedMarket.BSC_USDC,
-                                                                                              apexInfo.getUsdcConfig().getMultiChain()).put(ApexSupportedMarket.BTC_USDT, apexInfo.getUsdtConfig().getMultiChain())
-                                                                                      .build();
+            List<PerpetualContract> perpetualContractList = gson.fromJson(usdcConfig.getAsJsonArray("perpetualContract"),new TypeToken<List<PerpetualContract>>(){}.getType());
+            ImmutableMap<String, PerpetualContract> perpetualContractMap = parsePerpetualContract(perpetualContractList, currencyMap);
 
+            ImmutableMap<Integer, PerpetualContract> crossSymbolIdToPerpetualContractMap = perpetualContractMap.values().stream()
+                    .collect(ImmutableMap.toImmutableMap(
+                            PerpetualContract::getCrossSymbolId,
+                            Function.identity(),
+                            (a, b) -> a));
+            Global global = gson.fromJson(usdcConfig.getAsJsonObject("global"),Global.class);
 
-            ImmutableMap<ApexSupportedMarket, Global> globalMap =
-                    ImmutableMap.<ApexSupportedMarket, Global>builder().put(ApexSupportedMarket.BSC_USDC, apexInfo.getUsdcConfig().getGlobal())
-                                .put(ApexSupportedMarket.BTC_USDT, apexInfo.getUsdtConfig().getGlobal()).build();
+            MultiChain multiChain = gson.fromJson(usdcConfig.getAsJsonObject("multiChain"),MultiChain.class);
 
-            ImmutableMap<Integer, PerpetualContract> crossSymbolIdToPerpetualContractMapUsdc = perpetualContractMapUsdc.values().stream()
-                                                                                                                       .collect(
-                                                                                                                               ImmutableMap.toImmutableMap(
-                                                                                                                                       PerpetualContract::getCrossSymbolId,
-                                                                                                                                       Function.identity(),
-                                                                                                                                       (a, b) -> a));
-            ImmutableMap<Integer, PerpetualContract> crossSymbolIdToPerpetualContractMapUsdt = perpetualContractMapUsdt.values().stream()
-                                                                                                                       .collect(
-                                                                                                                               ImmutableMap.toImmutableMap(
-                                                                                                                                       PerpetualContract::getCrossSymbolId,
-                                                                                                                                       Function.identity(),
-                                                                                                                                       (a, b) -> a));
-
-            ImmutableMap<ApexSupportedMarket, ImmutableMap<Integer, PerpetualContract>> crossSymbolIdToPerpetualContractMap =
-                    ImmutableMap.<ApexSupportedMarket, ImmutableMap<Integer, PerpetualContract>>builder()
-                                .put(ApexSupportedMarket.BSC_USDC, crossSymbolIdToPerpetualContractMapUsdc)
-                                .put(ApexSupportedMarket.BTC_USDT, crossSymbolIdToPerpetualContractMapUsdt).build();
-            ;
-            HOLDER_REF.set(new Holder(globalMap, currencyMap, perpetualMap, crossSymbolIdToPerpetualContractMap, multiChainMap));
-            log.debug("[loadMetaData] loaded. global={}", globalMap.toString());
-            currencyMap.values().forEach(currency -> log.debug("[loadMetaData] finish. currencyMap={}", currency.toString()));
-            perpetualMap.values().forEach(
-                    perpetualContract -> log.debug("[loadMetaData] finish. perpetualContractMap={}", perpetualContract.toString()));
-        }
-        catch (Throwable throwable) {
-            log.error("[loadMetaData] error. exchangeInfoJsonStr={}", exchangeInfoJsonStr, throwable);
+            holderAtomicReference.set(new Holder(global, currencyMap, perpetualContractMap, crossSymbolIdToPerpetualContractMap, multiChain));
+            log.info("[loadMetaData] loaded. global={}", global);
+            currencyMap.values().forEach(currency -> log.info("[loadMetaData] finish. currency={}", currency));
+            perpetualContractMap.values().forEach(perpetualContract -> log.info("[loadMetaData] finish. perpetualContract={}", perpetualContract));
+        } catch (Throwable throwable) {
+            log.error("[loadMetaData] error. exchangeInfoJsonStr={}", usdcConfig.toString(), throwable);
             throw new Error(throwable);
         }
     }
 
 
-    private static ImmutableMap<String, Currency> parseCurrency(List<Currency> list) {
-        return list.stream().map(pb -> {
-            BigDecimal stepSize = pb.getStepSize();
-            return Currency.newBuilder().setId(pb.getId()).setStepSize(stepSize)
-                           .setStepSizeZero(BigDecimal.ZERO.setScale(stepSize.scale(), RoundingMode.UNNECESSARY))
-                           .setIconUrl(pb.getIconUrl()).setStarkExAssetId(pb.getStarkExAssetId())
-                           .setStarkExResolution(pb.getStarkExResolution() == null ? BigDecimal.ONE : pb.getStarkExResolution()).build();
-        }).collect(ImmutableMap.toImmutableMap(Currency::getId, Function.identity()));
+    private static ImmutableMap<String, Currency> parseCurrency(
+            List<Currency> list) {
+        return list.stream()
+                .map(pb -> {
+                    BigDecimal stepSize = pb.getStepSize();
+                    return Currency.newBuilder()
+                            .setId(pb.getId())
+                            .setStepSize(stepSize)
+                            .setStepSizeZero(BigDecimal.ZERO.setScale(stepSize.scale(), RoundingMode.UNNECESSARY))
+                            .setIconUrl(pb.getIconUrl())
+                            .setStarkExAssetId(pb.getStarkExAssetId())
+                            .setStarkExResolution(pb.getStarkExResolution() == null ? BigDecimal.ONE : pb.getStarkExResolution())
+                            .build();
+                })
+                .collect(ImmutableMap.toImmutableMap(
+                        Currency::getId,
+                        Function.identity()));
     }
 
-    private static ImmutableMap<String, PerpetualContract> parsePerpetualContract(List<PerpetualContract> list,
-                                                                                  ImmutableMap<String, Currency> currencyMap)
-    {
-        return list.stream().map(pb -> {
-            Currency settleCurrency = currencyMap.get(pb.getSettleCurrencyId());
-            if (settleCurrency == null) {
-                throw new RuntimeException("invalid settleCurrencyId: " + pb.getSettleCurrencyId());
-            }
-            Currency underlyingCurrency = currencyMap.get(pb.getUnderlyingCurrencyId());
-            if (underlyingCurrency == null) {
-                throw new RuntimeException("invalid underlyingCurrencyId: " + pb.getUnderlyingCurrencyId());
-            }
+    private static ImmutableMap<String, PerpetualContract> parsePerpetualContract(
+            List<PerpetualContract> list,
+            ImmutableMap<String, Currency> currencyMap) {
+        return list.stream()
+                .map(pb -> {
+                    Currency settleCurrency = currencyMap.get(pb.getSettleCurrencyId());
+                    if (settleCurrency == null) {
+                        throw new RuntimeException("invalid settleCurrencyId: " + pb.getSettleCurrencyId());
+                    }
+                    Currency underlyingCurrency = currencyMap.get(pb.getUnderlyingCurrencyId());
+                    if (underlyingCurrency == null) {
+                        throw new RuntimeException("invalid underlyingCurrencyId: " + pb.getUnderlyingCurrencyId());
+                    }
 
-            BigDecimal tickSize = pb.getTickSize();
-            BigDecimal stepSize = pb.getStepSize();
-            BigDecimal valueSize = tickSize.multiply(stepSize);
-            return PerpetualContract.newBuilder().setSymbol(pb.getSymbol()).setSymbolDisplayName(pb.getSymbolDisplayName())
-                                    .setSettleCurrencyId(pb.getSettleCurrencyId()).setSettleCurrency(settleCurrency)
-                                    .setUnderlyingCurrencyId(pb.getUnderlyingCurrencyId()).setUnderlyingCurrency(underlyingCurrency)
-                                    .setTickSize(tickSize)
-                                    .setTickSizeZero(BigDecimal.ZERO.setScale(tickSize.scale(), RoundingMode.UNNECESSARY))
-                                    .setStepSize(stepSize)
-                                    .setStepSizeZero(BigDecimal.ZERO.setScale(stepSize.scale(), RoundingMode.UNNECESSARY))
-                                    .setValueSize(valueSize)
-                                    .setValueSizeZero(BigDecimal.ZERO.setScale(valueSize.scale(), RoundingMode.UNNECESSARY))
-                                    .setMinOrderSize(pb.getMinOrderSize()).setMaxOrderSize(pb.getMaxOrderSize())
-                                    .setMaxPositionSize(pb.getMaxPositionSize()).setMaxMarketPriceRange(pb.getMaxMarketPriceRange())
-                                    .setInitialMarginRate(pb.getInitialMarginRate()).setMaintenanceMarginRate(pb.getMaintenanceMarginRate())
-                                    .setBaselinePositionValue(pb.getBaselinePositionValue())
-                                    .setIncrementalPositionValue(pb.getIncrementalPositionValue())
-                                    .setIncrementalInitialMarginRate(pb.getIncrementalInitialMarginRate())
-                                    .setIncrementalMaintenanceMarginRate(pb.getIncrementalMaintenanceMarginRate())
-                                    .setMaxMaintenanceMarginRate(pb.getMaxMaintenanceMarginRate())
-                                    .setMaxPositionValue(pb.getMaxPositionValue()).setEnableTrade(pb.isEnableTrade())
-                                    .setEnableDisplay(pb.isEnableDisplay()).setEnableOpenPosition(pb.isEnableOpenPosition())
-                                    .setEnableFundingSettlement(pb.isEnableFundingSettlement()).setDigitMerge(pb.getDigitMerge())
-                                    .setCrossId(pb.getCrossId()).setCrossSymbolId(pb.getCrossSymbolId())
-                                    .setCrossSymbolName(pb.getCrossSymbolName()).setFundingInterestRate(pb.getFundingInterestRate())
-                                    .setFundingImpactMarginNotional(pb.getFundingImpactMarginNotional())
-                                    .setDisplayMaxLeverage(pb.getDisplayMaxLeverage()).setDisplayMinLeverage(pb.getDisplayMinLeverage())
-                                    .setIndexPriceDecimals(pb.getIndexPriceDecimals()).setIndexPriceVarRate(pb.getIndexPriceVarRate())
-                                    .setOpenPositionOiLimitRate(pb.getOpenPositionOiLimitRate())
-                                    .setOpenPositionOiLimitMin(pb.getOpenPositionOiLimitMin())
-                                    .setStarkExSyntheticAssetId(pb.getStarkExSyntheticAssetId())
-                                    .setStarkExResolution(pb.getStarkExResolution()).setStarkExRiskFactor(pb.getStarkExRiskFactor())
-                                    .setStarkExRiskRate(new BigDecimal(pb.getStarkExRiskFactor()).divide(new BigDecimal(1L << 32))).build();
-        }).collect(ImmutableMap.toImmutableMap(PerpetualContract::getSymbol, Function.identity()));
+                    BigDecimal tickSize = pb.getTickSize();
+                    BigDecimal stepSize = pb.getStepSize();
+                    BigDecimal valueSize = tickSize.multiply(stepSize);
+                    return PerpetualContract.newBuilder()
+                            .setSymbol(pb.getSymbol())
+                            .setSymbolDisplayName(pb.getSymbolDisplayName())
+                            .setSettleCurrencyId(pb.getSettleCurrencyId())
+                            .setSettleCurrency(settleCurrency)
+                            .setUnderlyingCurrencyId(pb.getUnderlyingCurrencyId())
+                            .setUnderlyingCurrency(underlyingCurrency)
+                            .setTickSize(tickSize)
+                            .setTickSizeZero(BigDecimal.ZERO.setScale(tickSize.scale(), RoundingMode.UNNECESSARY))
+                            .setStepSize(stepSize)
+                            .setStepSizeZero(BigDecimal.ZERO.setScale(stepSize.scale(), RoundingMode.UNNECESSARY))
+                            .setValueSize(valueSize)
+                            .setValueSizeZero(BigDecimal.ZERO.setScale(valueSize.scale(), RoundingMode.UNNECESSARY))
+                            .setMinOrderSize(pb.getMinOrderSize())
+                            .setMaxOrderSize(pb.getMaxOrderSize())
+                            .setMaxPositionSize(pb.getMaxPositionSize())
+                            .setMaxMarketPriceRange(pb.getMaxMarketPriceRange())
+                            .setInitialMarginRate(pb.getInitialMarginRate())
+                            .setMaintenanceMarginRate(pb.getMaintenanceMarginRate())
+                            .setBaselinePositionValue(pb.getBaselinePositionValue())
+                            .setIncrementalPositionValue(pb.getIncrementalPositionValue())
+                            .setIncrementalInitialMarginRate(pb.getIncrementalInitialMarginRate())
+                            .setIncrementalMaintenanceMarginRate(pb.getIncrementalMaintenanceMarginRate())
+                            .setMaxMaintenanceMarginRate(pb.getMaxMaintenanceMarginRate())
+                            .setMaxPositionValue(pb.getMaxPositionValue())
+                            .setEnableTrade(pb.isEnableTrade())
+                            .setEnableDisplay(pb.isEnableDisplay())
+                            .setEnableOpenPosition(pb.isEnableOpenPosition())
+                            .setEnableFundingSettlement(pb.isEnableFundingSettlement())
+                            .setDigitMerge(pb.getDigitMerge())
+                            .setCrossId(pb.getCrossId())
+                            .setCrossSymbolId(pb.getCrossSymbolId())
+                            .setCrossSymbolName(pb.getCrossSymbolName())
+                            .setFundingInterestRate(pb.getFundingInterestRate())
+                            .setFundingImpactMarginNotional(pb.getFundingImpactMarginNotional())
+                            .setDisplayMaxLeverage(pb.getDisplayMaxLeverage())
+                            .setDisplayMinLeverage(pb.getDisplayMinLeverage())
+                            .setIndexPriceDecimals(pb.getIndexPriceDecimals())
+                            .setIndexPriceVarRate(pb.getIndexPriceVarRate())
+                            .setOpenPositionOiLimitRate(pb.getOpenPositionOiLimitRate())
+                            .setOpenPositionOiLimitMin(pb.getOpenPositionOiLimitMin())
+                            .setStarkExSyntheticAssetId(pb.getStarkExSyntheticAssetId())
+                            .setStarkExResolution(pb.getStarkExResolution())
+                            .setStarkExRiskFactor(pb.getStarkExRiskFactor())
+                            .setStarkExRiskRate(new BigDecimal(pb.getStarkExRiskFactor()).divide(new BigDecimal(1L << 32)))
+                            .build();
+                })
+                .collect(ImmutableMap.toImmutableMap(
+                        PerpetualContract::getSymbol,
+                        Function.identity()));
     }
 
-    public static Global global(ApexSupportedMarket market) {
-        if (!isLoaded) {
-            load(null);
-        }
-        return HOLDER_REF.get().global.get(market);
+    public static Global global(String contractZone) {
+        if (!isLoaded)
+            load();
+        if (contractZone.equals(CONTRACT_ZONE_USDT))
+            return HOLDER_REF_USDT.get().global;
+        if (contractZone.equals(CONTRACT_ZONE_USDC))
+            return HOLDER_REF_USDC.get().global;
+        return null;
     }
 
-    public static MultiChain multiChain(ApexSupportedMarket market) {
-        if (!isLoaded) {
-            load(null);
-        }
+    public static MultiChain multiChain(String contractZone) {
+        if (!isLoaded)
+            load();
 
-        return HOLDER_REF.get().multiChain.get(market);
+        if (contractZone.equals(CONTRACT_ZONE_USDT))
+            return HOLDER_REF_USDT.get().multiChain;
+        if (contractZone.equals(CONTRACT_ZONE_USDC))
+            return HOLDER_REF_USDC.get().multiChain;
+
+        return null;
     }
 
-    public static Currency currency(ApexSupportedMarket market, String currencyId) {
-        if (!isLoaded) {
-            load(null);
-        }
+    public static Currency currency(String currencyId,String contractZone) {
+        if (!isLoaded)
+            load();
 
-        Currency currency = HOLDER_REF.get().currencyMap.get(market).get(currencyId);
+        Currency currency = null;
+        if (contractZone.equals(CONTRACT_ZONE_USDT))
+            currency = HOLDER_REF_USDT.get().currencyMap.get(currencyId);
+        if (contractZone.equals(CONTRACT_ZONE_USDC))
+            currency = HOLDER_REF_USDC.get().currencyMap.get(currencyId);
+
         if (currency == null) {
-            throw new ApexProApiException(RUNTIME_ERROR, "invalid currencyId: " + currencyId);
+            throw new ApexProApiException(RUNTIME_ERROR,"invalid currencyId: " + currencyId);
         }
         return currency;
     }
 
-    public static ImmutableMap<String, Currency> currencyMap(ApexSupportedMarket market) {
-        if (!isLoaded) {
-            load(null);
-        }
+    public static ImmutableMap<String, Currency> currencyMap(String contractZone) {
+        if (!isLoaded)
+            load();
 
-        return HOLDER_REF.get().currencyMap.get(market);
+        if (contractZone.equals(CONTRACT_ZONE_USDT))
+            return HOLDER_REF_USDT.get().currencyMap;
+        if (contractZone.equals(CONTRACT_ZONE_USDC))
+            return HOLDER_REF_USDC.get().currencyMap;
+
+        return null;
     }
 
-    public static PerpetualContract perpetualContract(ApexSupportedMarket market, String symbol) {
-        if (!isLoaded) {
-            load(null);
-        }
+    public static PerpetualContract perpetualContract(String symbol) {
+        if (!isLoaded)
+            load();
+        if (HOLDER_REF_USDC.get().perpetualContractMap.containsKey(symbol))
+            return HOLDER_REF_USDC.get().perpetualContractMap.get(symbol);
 
-        PerpetualContract perpetualContract = HOLDER_REF.get().perpetualContractMap.get(market).get(symbol);
-        if (perpetualContract == null) {
-            throw new ApexProApiException(RUNTIME_ERROR, "invalid symbol: " + symbol);
-        }
-        return perpetualContract;
+        if (HOLDER_REF_USDT.get().perpetualContractMap.containsKey(symbol))
+            return HOLDER_REF_USDT.get().perpetualContractMap.get(symbol);
+
+            throw new ApexProApiException(RUNTIME_ERROR,"invalid symbol: " + symbol);
     }
 
-    public static ImmutableMap<String, PerpetualContract> perpetualContractMap(ApexSupportedMarket market) {
-        if (!isLoaded) {
-            load(null);
-        }
+    public static ImmutableMap<String, PerpetualContract> perpetualContractMap(String contractZone) {
+        if (!isLoaded)
+            load();
 
-        return HOLDER_REF.get().perpetualContractMap.get(market);
+        if (contractZone.equals(CONTRACT_ZONE_USDT))
+            return HOLDER_REF_USDT.get().perpetualContractMap;
+        if (contractZone.equals(CONTRACT_ZONE_USDC))
+            return HOLDER_REF_USDC.get().perpetualContractMap;
+
+
+        return null;
     }
 
-    public static ImmutableMap<Integer, PerpetualContract> crossSymbolIdToPerpetualContractMap(ApexSupportedMarket market) {
-        if (!isLoaded) {
-            load(null);
-        }
+    public static ImmutableMap<Integer, PerpetualContract> crossSymbolIdToPerpetualContractMap(String contractZone) {
+        if (!isLoaded)
+            load();
+        if (contractZone.equals(CONTRACT_ZONE_USDT))
+            return HOLDER_REF_USDT.get().crossSymbolIdToPerpetualContractMap;
+        if (contractZone.equals(CONTRACT_ZONE_USDC))
+            return HOLDER_REF_USDC.get().crossSymbolIdToPerpetualContractMap;
 
-        return HOLDER_REF.get().crossSymbolIdToPerpetualContractMap.get(market);
+        return null;
     }
 
     private static class Holder {
-        private final ImmutableMap<ApexSupportedMarket, Global> global;
-        private final ImmutableMap<ApexSupportedMarket, ImmutableMap<String, Currency>> currencyMap;
-        private final ImmutableMap<ApexSupportedMarket, ImmutableMap<String, PerpetualContract>> perpetualContractMap;
-        private final ImmutableMap<ApexSupportedMarket, ImmutableMap<Integer, PerpetualContract>> crossSymbolIdToPerpetualContractMap;
-        private final ImmutableMap<ApexSupportedMarket, MultiChain> multiChain;
+        private final Global global;
+        private final ImmutableMap<String, Currency> currencyMap;
+        private final ImmutableMap<String, PerpetualContract> perpetualContractMap;
+        private final ImmutableMap<Integer, PerpetualContract> crossSymbolIdToPerpetualContractMap;
+        private final MultiChain multiChain;
 
-        Holder(ImmutableMap<ApexSupportedMarket, Global> global, ImmutableMap<ApexSupportedMarket, ImmutableMap<String, Currency>> currencyMap,
-               ImmutableMap<ApexSupportedMarket, ImmutableMap<String, PerpetualContract>> perpetualContractMap,
-               ImmutableMap<ApexSupportedMarket, ImmutableMap<Integer, PerpetualContract>> crossSymbolIdToPerpetualContractMap,
-               ImmutableMap<ApexSupportedMarket, MultiChain> multiChain)
-        {
+        Holder(Global global,
+               ImmutableMap<String, Currency> currencyMap,
+               ImmutableMap<String, PerpetualContract> perpetualContractMap,
+               ImmutableMap<Integer, PerpetualContract> crossSymbolIdToPerpetualContractMap,
+               MultiChain multiChain) {
             this.global = global;
             this.currencyMap = currencyMap;
             this.perpetualContractMap = perpetualContractMap;
@@ -248,5 +297,26 @@ public class ExchangeInfo {
 
     private static BigDecimal parseDecimal(String str, BigDecimal defaultValue) {
         return (str == null || str.equals("")) ? defaultValue : new BigDecimal(str);
+    }
+
+    public static String getContractZone(String collateralToken) {
+        if (collateralToken.toUpperCase().equals(COLLATERAL_ASSET_USDC))
+            return CONTRACT_ZONE_USDC;
+        if (collateralToken.toUpperCase().equals(COLLATERAL_ASSET_USDT))
+            return CONTRACT_ZONE_USDT;
+        return null;
+    }
+
+    public static String getContractZoneBySymbol(String symbol) {
+        ImmutableMap<String, PerpetualContract> perpetualContractImmutableMap = perpetualContractMap(COLLATERAL_ASSET_USDC);
+        if (perpetualContractImmutableMap != null && perpetualContractImmutableMap.containsKey(symbol))
+            return COLLATERAL_ASSET_USDC;
+
+        perpetualContractImmutableMap = perpetualContractMap(COLLATERAL_ASSET_USDT);
+        if (perpetualContractImmutableMap != null && perpetualContractImmutableMap.containsKey(symbol))
+            return COLLATERAL_ASSET_USDT;
+
+        log.error("Symbol is in valid");
+        return null;
     }
 }

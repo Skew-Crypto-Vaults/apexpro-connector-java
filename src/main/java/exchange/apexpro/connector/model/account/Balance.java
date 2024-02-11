@@ -1,6 +1,5 @@
 package exchange.apexpro.connector.model.account;
 
-import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -11,10 +10,11 @@ import java.math.BigDecimal;
 @Data
 public class Balance {
 
-    private BigDecimal totalEquityValue;
-    private BigDecimal availableBalance; //Available to withdraw or as margin to open new position.
-    private BigDecimal initialMargin;
-    private BigDecimal maintenanceMargin;
+    private String token;
+    private BigDecimal totalEquity;
+    private BigDecimal available; //Available to withdraw or as margin to open new position.
+    private BigDecimal totalInitialMargin;
+    private BigDecimal totalMaintenanceMargin;
 
     public long updatedTime;
 

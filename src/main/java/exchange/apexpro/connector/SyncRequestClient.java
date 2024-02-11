@@ -1,6 +1,5 @@
 package exchange.apexpro.connector;
 
-import exchange.apexpro.connector.enums.ApexSupportedMarket;
 import exchange.apexpro.connector.exception.ApexProApiException;
 import exchange.apexpro.connector.impl.ApiInternalFactory;
 import exchange.apexpro.connector.model.account.*;
@@ -73,29 +72,28 @@ public interface SyncRequestClient {
 
     String getExchangeInfo();
 
-    ApiCredential onboard(String token,String ethAddress, String onboardingSignature, String l2PublicKey, String l2KeyYCoordinate);
+    ApiCredential onboard(String ethAddress, String onboardingSignature, String l2PublicKey, String l2KeyYCoordinate);
 
     /**
      * GET Retrieve User Account Data
-     * GET /v1/account
+     * GET /v2/account
      *
      * @return account
      */
-    AccountDetails getAccount();
+    Account getAccount();
 
 
     /**
-     * GET Account's total equity & available balance
-     * GET /v1/account
+     * GET Account's total equity and available balance
+     * GET /v2/account
      *
-     * @return account
+     * @return list of collateral assets
      */
-    ApexBalance getBalance();
+    List<Balance> getBalance();
 
     /**
      * GET User Historial Profit and Loss
-     * GET /v1/historical-pnl
-     *
+     * GET /v2/historical-pnl
      * @param beginTimeInclusive StartTime
      * @param endTimeExclusive   EndTime
      * @param symbol             Symbol
@@ -106,16 +104,17 @@ public interface SyncRequestClient {
     HistoryPnl getHistoryPnl(Long beginTimeInclusive, Long endTimeExclusive, String symbol, Long page, Integer limit);
 
     /**
-     * GET Yesterday's Profit & Loss
-     * GET /v1/yesterday-pnl
+     * GET Yesterday's Profit and Loss
+     * GET /v2/yesterday-pnl
+     * @param contractZone ApiConstants.CONTRACT_ZONE_USDC | ApiConstants.CONTRACT_ZONE_USDT
      *
      * @return yesterdayPnl
      */
-    YesterdayPnl getYesterdayPnl();
+    YesterdayPnl getYesterdayPnl(String contractZone);
 
     /**
      * GET Historical Asset Value
-     * GET /v1/history-value
+     * GET /v2/history-value
      *
      * @param startTime Start time
      * @param endTime   End time
@@ -126,9 +125,8 @@ public interface SyncRequestClient {
 
     /**
      * GET Trade History
-     * GET /v1/fills
+     * GET /v2/fills
      *
-     *@ param token              Token
      * @param symbol             Symbol
      * @param limit              default at 100
      * @param beginTimeInclusive Start time
@@ -136,12 +134,12 @@ public interface SyncRequestClient {
      * @param page               Page numbers start from 0
      * @return order fills
      */
-    OrderFills getFills(String token,String symbol, Long beginTimeInclusive, Long endTimeExclusive, Integer page, Integer limit);
+    OrderFills getFills(String symbol, Long beginTimeInclusive, Long endTimeExclusive, Integer page, Integer limit);
 
 
     /**
      * POST Creating Orders
-     * POST /v1/create-order
+     * POST /v2/create-order
      *
      * @param symbol          Symbol
      * @param side            BUY or SELL
@@ -154,12 +152,12 @@ public interface SyncRequestClient {
      * @param reduceOnly      Reduce-only
      * @return order
      */
-    Order createOrder(ApexSupportedMarket market,String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId, boolean reduceOnly);
+    Order createOrder(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId, boolean reduceOnly);
 
 
     /**
      * POST Creating Orders with TPSL(Take-profit/Stop-loss)
-     * POST /v1/create-order
+     * POST /v2/create-order
      *
      * @param symbol          Symbol
      * @param side            BUY or SELL
@@ -174,19 +172,19 @@ public interface SyncRequestClient {
      * @param withStopLoss    if you want to place an order with some stop loss parameters, you can pass it here.
      * @return order
      */
-    Order createOrderWithTPSL(ApexSupportedMarket market,String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId, boolean reduceOnly,OrderParams withTakeProfit, OrderParams withStopLoss);
+    Order createOrderWithTPSL(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal price, BigDecimal maxFeeRate, TimeInForce timeInForce, String clientOrderId, boolean reduceOnly,OrderParams withTakeProfit, OrderParams withStopLoss);
 
 
     /**
      * POST Creating Conditional Order
-     * POST /v1/create-order
+     * POST /v2/create-order
      *
      * @param symbol          Symbol
      * @param side            BUY or SELL
      * @param type            "LIMIT", "MARKET"
      * @param size            Size
      * @param triggerPrice    Trigger price
-     * @param triggerPriceType ORACLE、INDEX、MARKET
+     * @param triggerPriceType ORACLE, INDEX, MARKET
      * @param orderPrice      Order price, only valid on LIMIT order
      * @param maxFeeRate      Maximum trading fee rate, you can get it by max(taker_fee,maker_fee), taker_fee/maker_fee can be fetched from GET /v1/account
      * @param timeInForce     "GOOD_TIL_CANCEL", "FILL_OR_KILL", "IMMEDIATE_OR_CANCEL", "POST_ONLY"
@@ -194,7 +192,7 @@ public interface SyncRequestClient {
      * @param reduceOnly      Reduce-only
      * @return order
      */
-    Order createConditionalOrder(ApexSupportedMarket market,String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal triggerPrice,PriceType triggerPriceType, BigDecimal orderPrice,BigDecimal maxFeeRate,TimeInForce timeInForce, String clientOrderId, boolean reduceOnly);
+    Order createConditionalOrder(String symbol, OrderSide side, OrderType type, BigDecimal size, BigDecimal triggerPrice,PriceType triggerPriceType, BigDecimal orderPrice,BigDecimal maxFeeRate,TimeInForce timeInForce, String clientOrderId, boolean reduceOnly);
 
 
 
@@ -202,7 +200,7 @@ public interface SyncRequestClient {
 
     /**
      * POST Cancel Order
-     * POST /v1/delete-order
+     * POST /v2/delete-order
      *
      * @param id order id
      * @return result map
@@ -211,7 +209,7 @@ public interface SyncRequestClient {
 
     /**
      * POST Cancel Order By ClientOrderId
-     * POST /v1/delete-connector-order-id
+     * POST /v2/delete-client-order-id
      *
      * @param id connector id
      * @return result map
@@ -220,23 +218,25 @@ public interface SyncRequestClient {
 
     /**
      * GET Open Orders
-     * GET /v1/open-orders
+     * GET /v2/open-orders
+     * @param contractZone valid param is the one of [ApiConstants.CONTRACT_ZONE_USDC,ApiConstants/CONTRACT_ZONE_USDT]
      */
-    OpenOrders getOpenOrders();
+    OpenOrders getOpenOrders(String contractZone);
 
 
     /**
      * POST Cancel all Open Orders
-     * POST /v1/delete-open-orders
+     * POST /v2/delete-open-orders
      *
      * @param symbol "BTC-USDC,ETH-USDC", Cancel all orders if none
+     * @param contractZone only orders in this contract area will be canceled. valid param is the one of [ApiConstants.CONTRACT_ZONE_USDC,ApiConstants/CONTRACT_ZONE_USDT]
      * @return empty
      */
-    Map<String, String> cancelAllOpenOrders(String symbol);
+    Map<String, String> cancelAllOpenOrders(String symbol,String contractZone);
 
     /**
      * GET All Order History
-     * GET /v1/history-orders
+     * GET /v2/history-orders
      *
      * @param symbol trading pair
      * @param status PENDING,OPEN,FILLED,CANCELING,CANCELED,UNTRIGGERED
@@ -252,7 +252,7 @@ public interface SyncRequestClient {
 
     /**
      * GET Order ID
-     * GET /v1/get-order
+     * GET /v2/get-order
      *
      * @param id order id
      * @return order
@@ -261,12 +261,14 @@ public interface SyncRequestClient {
 
     /**
      * GET Order by clientOrderId
-     * GET /v1/order-by-connector-order-id
+     * GET /v2/order-by-client-order-id
      *
      * @param id connector order id
+     * @param contractZone valid param is the one of [ApiConstants.CONTRACT_ZONE_USDC,ApiConstants/CONTRACT_ZONE_USDT]
+
      * @return order
      */
-    Order getOrderByClientOrderId(String id);
+    Order getOrderByClientOrderId(String id,String contractZone);
 
     /**
      * GET Retrieve User Deposit Data
@@ -274,7 +276,7 @@ public interface SyncRequestClient {
      *
      * @param limit              Page limit default at 100
      * @param page               Page numbers start from 0
-     * @param currencyId         Filter to show only currency ID, all will be searched if the field is empty
+     * @param currencyId         USDT|USDC
      * @param beginTimeInclusive Start time
      * @param endTimeExclusive   End time
      * @param chainIds           Check for multiple chainID records
@@ -290,18 +292,19 @@ public interface SyncRequestClient {
      * @param page               Page numbers start from 0;
      * @param beginTimeInclusive Start time;
      * @param endTimeExclusive   End time;
+     * @param currencyId valid in [USDT,USDC]
      * @return wallet records
      */
     WithdrawalList getWithdrawList(String currencyId,Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive);
 
     /**
      * POST User Withdrawal
-     * POST /v1/create-withdrawal
+     * POST /v2/create-withdrawal
      *
      * @param amount     Amount
-     * @param clientId   Unique id of the connector associated with the withdrawal. Must be <= 40 characters. When using the connector, if not included, will be randomly generated by the connector.
+     * @param clientId   Unique id.
      * @param expiration Date and time at which the withdrawal expires if it has not been completed. Expiration must be at least seven days in the future.
-     * @param currencyId      Asset (in USDC) being withdrawn.
+     * @param currencyId      Asset (in USDC | USDT) being withdrawn.
      * @param address    Your ethereum address only registered on ApexPro.
      * @param signature  The signature for the wallet, signed with the account's STARK private key.
      * @return withdrawal result
@@ -311,26 +314,26 @@ public interface SyncRequestClient {
 
     /**
      * POST Create Fast Withdrawal Order
-     * POST /v1/fast-withdraw
+     * POST /v2/fast-withdraw
      *
      * @param amount       Amount
-     * @param clientId     Unique id of the connector associated with the withdrawal. Must be <= 40 characters. When using the connector, if not included, will be randomly generated by the connector.
+     * @param clientId     Unique id.
      * @param expiration   Date and time at which the withdrawal expires if it has not been completed. Expiration must be at least seven days in the future.
-     * @param currencyId        Asset (in USDC) being withdrawn.
+     * @param currencyId        Asset (in USDC/USDT) being withdrawn.
      * @param signature    The signature for the wallet, signed with the account's STARK private key.
      * @param address      eth address
      * @param fee          Fees
      * @param chainId      chainId
      * @return withdrawal result
      */
-    WithdrawalResult createFastWithdrawalOrder(ApexSupportedMarket market,BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId);
+    WithdrawalResult createFastWithdrawalOrder(BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId);
 
     /**
      * POST Cross-Chain Withdrawals
-     * POST /v1/cross-chain-withdraw
+     * POST /v2/cross-chain-withdraw
      *
      * @param amount       Amount
-     * @param clientId     Unique id of the connector associated with the withdrawal. Must be <= 40 characters. When using the connector, if not included, will be randomly generated by the connector.
+     * @param clientId     Unique id.
      * @param expiration   Date and time at which the withdrawal expires if it has not been completed. Expiration must be at least seven days in the future.
      * @param currencyId        Asset (in USDC) being withdrawn.
      * @param signature    The signature for the wallet, signed with the account's STARK private key.
@@ -339,22 +342,22 @@ public interface SyncRequestClient {
      * @param chainId      chainId
      * @return withdrawal result
      */
-    WithdrawalResult createCrossChainWithdrawalOrder(ApexSupportedMarket market, BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId);
+    WithdrawalResult createCrossChainWithdrawalOrder(BigDecimal amount, String clientId, Long expiration, String currencyId, String signature, String address, BigDecimal fee, Long chainId);
 
     /**
-     * Returns calculated withdrawal fee for Fast & Cross-Chain withdrawal & total available fund pool amount to withdraw;
-     * GET /v1/uncommon-withdraw-fee
+     * Returns calculated withdrawal fee for Fast and Cross-Chain withdrawal and total available fund pool amount to withdraw;
+     * GET /v2/uncommon-withdraw-fee
      *
-     * @param amount  USDC
+     * @param collateralToken  valid params in [ApiConstants.COLLATERAL_ASSET_USDC,ApiConstants.COLLATERAL_ASSET_USDT]
      * @param chainId chainId
      * @return WithdrawalFee
      */
-    WithdrawalFee getWithdrawalFee(BigDecimal amount, long chainId);
+    WithdrawalFee getWithdrawalFee(String collateralToken,BigDecimal amount, long chainId);
 
 
     /**
-     * Get Worst price & bidOne price & askOne price from orderbook;
-     * GET /v1/get-worst-price
+     * Get Worst price and bidOne price and askOne price from orderbook;
+     * GET /v2/get-worst-price
      * @param side BUY or SELL order
      * @param size the size of Order placing you want
      * @return OrderBookPrice
@@ -372,8 +375,7 @@ public interface SyncRequestClient {
      * @param positionSide position side ,if null both wil be returned
      * @return
      */
-    FundingRates getFundingRate(String token,String symbol, Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive,
-                                PositionSide positionSide);
+    FundingRates getFundingRate(String symbol, Integer limit, Long page, Long beginTimeInclusive, Long endTimeExclusive, PositionSide positionSide);
 
 
     /**
@@ -382,6 +384,7 @@ public interface SyncRequestClient {
      * @return
      */
     Ticker getTicker(String symbol);
+
 
     void setInitialMarginRate(String symbol, BigDecimal initialMarginRate);
 }

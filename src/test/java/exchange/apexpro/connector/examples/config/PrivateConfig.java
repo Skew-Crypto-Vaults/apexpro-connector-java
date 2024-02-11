@@ -10,10 +10,9 @@ import org.web3j.crypto.Credentials;
 public class PrivateConfig {
 
     //Your ethereum private key
-    private static String ETH_PRIVATE_KEY = "387bfabbf324497354364f7ad3ea47221f93636fe0fbb27c5f38dfab97350d11";
-
-    private static String TOKEN = "USDT";
+    private static String ETH_PRIVATE_KEY = "5921059e276bae2e61d8e5ade6d6a026cce953344d3b9f0df218ef9ecd90ac58";
     private static int network = ApiConstants.NETWORKID_TEST;
+
 
     public ApexProCredentials getApexProCredentials() {
         return apexProCredentials;
@@ -23,10 +22,15 @@ public class PrivateConfig {
 
     public static PrivateConfig loadConfig() {
         PrivateConfig privateConfig = new PrivateConfig();
-        ApexProCredentials apexProCredentials = ApexProCredentials.create(TOKEN,ETH_PRIVATE_KEY,network);
+        ApexProCredentials apexProCredentials = ApexProCredentials.create(ETH_PRIVATE_KEY,network);
         privateConfig.apexProCredentials = apexProCredentials;
         return privateConfig;
     }
 
-
+    public static PrivateConfig createApexProCredentials(L2KeyPair l2KeyPair,ApiCredential apiCredential) {
+        PrivateConfig privateConfig = new PrivateConfig();
+        ApexProCredentials apexProCredentials = ApexProCredentials.create(apiCredential,l2KeyPair);
+        privateConfig.apexProCredentials = apexProCredentials;
+        return privateConfig;
+    }
 }

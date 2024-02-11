@@ -21,11 +21,11 @@ import java.util.UUID;
 public class CreateOrderWithTPSL {
     public static void main(String[] args) throws IOException {
         //Initialize the exchange configuration information. This is optional because it will be loaded automatically when you call its internal member variables.
-        ExchangeInfo.load(null);
+        ExchangeInfo.load();
 
 
         //Prepare an order;
-        String symbol = "BTC-USDC";
+        String symbol = "BTC-USDT";
         String clientId = UUID.randomUUID().toString();
         BigDecimal size = new BigDecimal("0.002");
         BigDecimal price = new BigDecimal("23300");
@@ -55,7 +55,7 @@ public class CreateOrderWithTPSL {
         ApexProCredentials apexProCredentials = PrivateConfig.loadConfig().getApexProCredentials(); //Load the credentials
         SyncRequestClient syncRequestClient = SyncRequestClient.create(apexProCredentials);
 
-        Order order = syncRequestClient.createOrderWithTPSL(ApexSupportedMarket.BSC_USDC,symbol,
+        Order order = syncRequestClient.createOrderWithTPSL(symbol,
                 side,
                 orderType,
                 size,

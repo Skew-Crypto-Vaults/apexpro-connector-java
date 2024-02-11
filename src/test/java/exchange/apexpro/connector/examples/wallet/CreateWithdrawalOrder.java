@@ -2,7 +2,6 @@ package exchange.apexpro.connector.examples.wallet;
 
 import exchange.apexpro.connector.ApexProCredentials;
 import exchange.apexpro.connector.SyncRequestClient;
-import exchange.apexpro.connector.enums.ApexSupportedMarket;
 import exchange.apexpro.connector.examples.config.PrivateConfig;
 import exchange.apexpro.connector.impl.L2OrderSigner;
 import exchange.apexpro.connector.model.meta.ExchangeInfo;
@@ -13,12 +12,12 @@ import exchange.apexpro.connector.model.user.L2KeyPair;
 
 import java.math.BigDecimal;
 
-import static exchange.apexpro.connector.constant.ApiConstants.COLLATERAL_ASSET;
+import static exchange.apexpro.connector.constant.ApiConstants.COLLATERAL_ASSET_USDC;
 import static exchange.apexpro.connector.constant.ApiConstants.ORDER_SIGNATURE_EXPIRATION_BUFFER_HOURS;
 
 public class CreateWithdrawalOrder {
     public static void main(String[] args) {
-        ExchangeInfo.load(null);
+        ExchangeInfo.load();
 
         ApexProCredentials apexProCredentials = PrivateConfig.loadConfig().getApexProCredentials(); //Load the credentials
 
@@ -31,16 +30,15 @@ public class CreateWithdrawalOrder {
         long expireTimeInHour = (System.currentTimeMillis() / (60L * 60L * 1000L)) + ORDER_SIGNATURE_EXPIRATION_BUFFER_HOURS;
         long expireTime = expireTimeInHour * 3600L * 1000L;
 
-        String currency = COLLATERAL_ASSET;
-        String address = apexProCredentials.web3Credentials.getAddress();
+        String currency = COLLATERAL_ASSET_USDC;
+        String address = apexProCredentials.getAddress();
         Long chainId = 97l;
-        WithdrawalFee withdrawalFee = syncRequestClient.getWithdrawalFee(amount,chainId);
+        WithdrawalFee withdrawalFee = syncRequestClient.getWithdrawalFee(currency,amount,chainId);
         BigDecimal fee = withdrawalFee.getWithdrawalFee();
 
-        String signature = L2OrderSigner.signCrossChainWithdraw(ApexSupportedMarket.BTC_USDT,l2KeyPair, apiCredential.getAccountId(),
-                amount, clientId, expireTimeInHour, currency, address, fee, chainId);
-        WithdrawalResult result = syncRequestClient.createFastWithdrawalOrder(ApexSupportedMarket.BSC_USDC,amount, clientId, expireTime,
-                currency, signature, address, fee, chainId);
+        String signature = L2OrderSigner.signWithdrawalOrder(l2KeyPair, apiCredential.getAccountId(),
+                address,amount, clientId, expireTimeInHour, currency);
+        WithdrawalResult result = syncRequestClient.createWithdrawalOrder(amount, clientId, expireTime, currency, address,signature);
         System.out.println(result);
     }
 }

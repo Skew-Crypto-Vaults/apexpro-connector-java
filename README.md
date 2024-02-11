@@ -26,11 +26,13 @@ The examples are located under src/test/java/examples. Before running the exampl
 
 ```
 //Load configration information from server side;
+
 ExchangeInfo.load();
 
-log.info("ExchangeInfo.global:{} ",ExchangeInfo.global());
-log.info("ExchangeInfo.currencies: {}",ExchangeInfo.currencyMap());
-log.info("ExchangeInfo.perpetualContracts: {}", ExchangeInfo.perpetualContractMap());
+log.info("ExchangeInfo.global:{} ",ExchangeInfo.global(CONTRACT_ZONE_USDC));
+log.info("ExchangeInfo.currencies: {}",ExchangeInfo.currencyMap(CONTRACT_ZONE_USDC));
+log.info("ExchangeInfo.perpetualContracts: {}", ExchangeInfo.perpetualContractMap(CONTRACT_ZONE_USDC));
+
 ```
 
 ### Onboarding Endpoint: Onboard to ApexPro with an ethereum private key;

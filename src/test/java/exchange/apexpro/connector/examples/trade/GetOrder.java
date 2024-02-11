@@ -9,7 +9,7 @@ public class GetOrder {
     public static void main(String[] args) {
         ApexProCredentials apexProCredentials = PrivateConfig.loadConfig().getApexProCredentials(); //Load the credentials
         SyncRequestClient syncRequestClient = SyncRequestClient.create(apexProCredentials);
-        Order result = syncRequestClient.getOrder("431809839325249553");
+        Order result = syncRequestClient.getOrder("527695162116145723");
         System.out.println("View order: " +result);
 
     }

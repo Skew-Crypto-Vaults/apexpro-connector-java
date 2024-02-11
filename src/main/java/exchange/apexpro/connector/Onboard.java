@@ -48,7 +48,7 @@ public class Onboard {
     }
 
 
-    public static ApiCredential generateApiCredential(String token,Credentials web3Credentials, String l2Key, String l2KeyYCoordinate, int networkId) {
+    public static ApiCredential generateApiCredential(Credentials web3Credentials, String l2Key, String l2KeyYCoordinate, int networkId) {
         RequestOptions options = new RequestOptions();
         options.setNetworkId(networkId);
 
@@ -67,8 +67,9 @@ public class Onboard {
         System.arraycopy(ethSignature.getS(), 0, signatureValue, 32, 32);
         System.arraycopy(ethSignature.getV(), 0, signatureValue, 64, 1);
         String signature = Numeric.toHexString(signatureValue);
-        ApiCredential apiCredential = syncRequestClient.onboard(token,ethAddress,signature,l2Key,l2KeyYCoordinate);
+        ApiCredential apiCredential = syncRequestClient.onboard(ethAddress,signature,l2Key,l2KeyYCoordinate);
         apiCredential.setNetworkId(networkId);
+        apiCredential.setAddress(ethAddress);
         return apiCredential;
     }
 
