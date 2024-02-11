@@ -35,7 +35,7 @@ public class ApiConstants {
     public static String CONTRACT_ZONE_USDC = COLLATERAL_ASSET_USDC;
     public static String CONTRACT_ZONE_USDT = COLLATERAL_ASSET_USDT;
 
-    public static final String DEFAULT_ORDER_ASSET = "BTC-USDC";
+    public static final String DEFAULT_ORDER_ASSET = "BTC-USDT";
 
 
     // ------------ Ethereum Transactions ------------
