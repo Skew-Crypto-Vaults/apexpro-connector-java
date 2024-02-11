@@ -107,7 +107,7 @@ class RestApiRequestImpl {
                 .putToPost("starkKey", l2PublicKey)
                 .putToPost("chainId", Long.valueOf(chainId));
 
-        request.request = createRequest(serverUrl, "/v1/generate-nonce", builder);
+        request.request = createRequest(serverUrl, "/v2/generate-nonce", builder);
 
         request.jsonParser = (jsonWrapper -> {
             JsonWrapper jsonObject = jsonWrapper.getJsonObject("data");
@@ -926,7 +926,7 @@ class RestApiRequestImpl {
                 .putToUrl("endTimeExclusive", endTimeExclusive!=null?String.valueOf(endTimeExclusive):"")
                 .putToUrl("chainIds", chainIds!=null?Strings.join(chainIds,","):"")
                 .putToUrl("transferType", "DEPOSIT,CROSS_DEPOSIT");
-        request.request = createRequest(serverUrl, "/v1/transfers", builder);
+        request.request = createRequest(serverUrl, "/v2/transfers", builder);
         request.jsonParser = (jsonWrapper -> {
             jsonWrapper = jsonWrapper.getJsonObject("data");
             DepositList result = new DepositList();
@@ -1167,7 +1167,7 @@ class RestApiRequestImpl {
         RequestParamsBuilder builder = RequestParamsBuilder.build()
                 .putToUrl("symbol", symbol.replace("-",""));
 
-        request.request = createRequest(serverUrl, "/v1/ticker", builder);
+        request.request = createRequest(serverUrl, "/v2/ticker", builder);
         request.jsonParser = (jsonWrapper -> {
             JsonWrapperArray jsonWrapperArray = jsonWrapper.getJsonArray("data");
 

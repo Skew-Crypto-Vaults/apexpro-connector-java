@@ -91,9 +91,9 @@ public class ExchangeInfo {
             MultiChain multiChain = gson.fromJson(usdcConfig.getAsJsonObject("multiChain"),MultiChain.class);
 
             holderAtomicReference.set(new Holder(global, currencyMap, perpetualContractMap, crossSymbolIdToPerpetualContractMap, multiChain));
-            log.info("[loadMetaData] loaded. global={}", global);
-            currencyMap.values().forEach(currency -> log.info("[loadMetaData] finish. currency={}", currency));
-            perpetualContractMap.values().forEach(perpetualContract -> log.info("[loadMetaData] finish. perpetualContract={}", perpetualContract));
+            log.debug("[loadMetaData] loaded. global={}", global);
+            currencyMap.values().forEach(currency -> log.debug("[loadMetaData] finish. currency={}", currency));
+            perpetualContractMap.values().forEach(perpetualContract -> log.debug("[loadMetaData] finish. perpetualContract={}", perpetualContract));
         } catch (Throwable throwable) {
             log.error("[loadMetaData] error. exchangeInfoJsonStr={}", usdcConfig.toString(), throwable);
             throw new Error(throwable);
